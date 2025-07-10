@@ -25,6 +25,11 @@ export class BoardsController {
     return this.boardsService.findAll();
   }
 
+  @Get('default')
+  getDefaultBoard() {
+    return this.boardsService.getOrCreateDefaultBoard();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.boardsService.findOne(id);
