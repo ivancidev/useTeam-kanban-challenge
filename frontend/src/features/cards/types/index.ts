@@ -43,3 +43,13 @@ export interface CardItemProps {
   onDelete?: (cardId: string) => void;
   isLoading?: boolean;
 }
+
+
+export interface CardDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  card: Card;
+  onSave: (data: UpdateCardDto) => Promise<void>;
+  onDelete: () => void;
+  columnName: string;
+}

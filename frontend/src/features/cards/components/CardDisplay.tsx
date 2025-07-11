@@ -20,12 +20,12 @@ export function CardDisplay({
   showActions = false,
 }: CardDisplayProps) {
   const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent events
+    e.stopPropagation(); // Prevent triggering parent card click
     onEdit?.(card);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent events
+    e.stopPropagation(); // Prevent triggering parent card click
     onDelete?.(card.id);
   };
 
