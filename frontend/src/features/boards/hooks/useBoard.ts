@@ -291,6 +291,14 @@ export function useBoard() {
     }
   };
 
+  const updateColumnState = (updatedColumn: Column) => {
+    setColumns((prevColumns) =>
+      prevColumns.map((col) =>
+        col.id === updatedColumn.id ? updatedColumn : col
+      )
+    );
+  };
+
   // Load board on mount
   useEffect(() => {
     loadBoard();
@@ -306,6 +314,7 @@ export function useBoard() {
     editColumn,
     deleteColumn,
     moveCard,
+    updateColumnState,
     clearError,
   };
 }
