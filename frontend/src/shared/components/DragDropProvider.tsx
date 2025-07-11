@@ -5,6 +5,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   DropAnimation,
   KeyboardSensor,
   PointerSensor,
@@ -16,6 +17,8 @@ import { useState } from "react";
 import type { Card } from "../../features/cards/types";
 import type { Column } from "../../features/columns/types";
 import { CardDisplay } from "../../features/cards/components/CardDisplay";
+import { useDragStore } from "../stores/dragStore";
+import { calculateDropPosition } from "../utils/dragCalculations";
 
 interface DragDropProviderProps {
   children: React.ReactNode;
@@ -25,6 +28,12 @@ interface DragDropProviderProps {
     targetColumnId: string,
     newOrder: number
   ) => void;
+  onDragPositionChange?: (dragState: {
+    isDragging: boolean;
+    activeCardId: string | null;
+    targetColumnId: string | null;
+    insertPosition: number | null;
+  }) => void;
 }
 
 const dropAnimation: DropAnimation = {
@@ -41,13 +50,15 @@ export function DragDropProvider({
   children,
   columns,
   onMoveCard,
+  onDragPositionChange,
 }: DragDropProviderProps) {
   const [activeCard, setActiveCard] = useState<Card | null>(null);
+  const dragStore = useDragStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3, // Reducir la distancia para mayor sensibilidad
       },
     }),
     useSensor(KeyboardSensor)
@@ -55,6 +66,7 @@ export function DragDropProvider({
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    const activeCardId = active.id as string;
 
     // Find the card being dragged
     for (const column of columns) {
@@ -64,18 +76,49 @@ export function DragDropProvider({
         break;
       }
     }
-  };
 
+    // Set drag state in store
+    dragStore.setDragState({
+      isDragging: true,
+      activeCardId,
+      targetColumnId: null,
+      insertPosition: null,
+      calculatedOrder: null,
+    });
+
+    // Also notify parent for backward compatibility
+    onDragPositionChange?.({
+      isDragging: true,
+      activeCardId,
+      targetColumnId: null,
+      insertPosition: null,
+    });
+  };
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveCard(null);
 
-    if (!over) return;
-
     const activeCardId = active.id as string;
-    const overId = over.id as string;
 
-    // Find the source column and card
+    // Obtener los valores calculados del store
+    const calculatedOrder = dragStore.calculatedOrder;
+    const targetColumnId = dragStore.targetColumnId;
+
+    // Reset drag state
+    dragStore.resetDragState();
+
+    // Notificar que terminó el drag
+    onDragPositionChange?.({
+      isDragging: false,
+      activeCardId: null,
+      targetColumnId: null,
+      insertPosition: null,
+    });
+
+    // Si no hay valores válidos, salir
+    if (!over || calculatedOrder === null || !targetColumnId) return;
+
+    // Buscar la tarjeta original para verificar si realmente cambió
     let sourceColumn;
     let sourceCard;
     for (const column of columns) {
@@ -89,62 +132,44 @@ export function DragDropProvider({
 
     if (!sourceColumn || !sourceCard) return;
 
-    // Check if dropping on a column or a card
-    let targetColumn;
-    let insertAtIndex = -1;
-
-    // First check if dropping on a card
-    for (const column of columns) {
-      const cardIndex = column.cards?.findIndex((c: Card) => c.id === overId);
-      if (cardIndex !== undefined && cardIndex >= 0) {
-        targetColumn = column;
-        insertAtIndex = cardIndex;
-        break;
-      }
-    }
-
-    // If not dropping on a card, check if dropping on a column
-    if (!targetColumn) {
-      targetColumn = columns.find((col) => col.id === overId);
-      if (targetColumn) {
-        // Dropping on column - add to end
-        insertAtIndex = targetColumn.cards?.length || 0;
-      }
-    }
-
-    if (!targetColumn) return;
-
-    // Calculate new order based on position
-    let newOrder: number;
-    const targetCards = targetColumn.cards || [];
-
-    if (insertAtIndex === 0) {
-      // Insert at beginning
-      newOrder = targetCards.length > 0 ? targetCards[0].order - 1 : 0;
-    } else if (insertAtIndex >= targetCards.length) {
-      // Insert at end
-      newOrder =
-        targetCards.length > 0
-          ? Math.max(...targetCards.map((c) => c.order)) + 1
-          : 0;
-    } else {
-      // Insert between cards
-      const prevCard = targetCards[insertAtIndex - 1];
-      const nextCard = targetCards[insertAtIndex];
-      newOrder = (prevCard.order + nextCard.order) / 2;
-    }
-
-    // Only move if there's actually a change
+    // Solo mover si hay un cambio real
     if (
-      sourceColumn.id !== targetColumn.id ||
-      Math.abs(sourceCard.order - newOrder) > 0.1
+      sourceColumn.id !== targetColumnId ||
+      Math.abs(sourceCard.order - calculatedOrder) > 0.1
     ) {
-      onMoveCard(activeCardId, targetColumn.id, newOrder);
+      onMoveCard(activeCardId, targetColumnId, calculatedOrder);
     }
   };
 
-  const handleDragOver = () => {
-    // Handle drag over logic if needed
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+
+    if (!over || !active) return;
+
+    const activeCardId = active.id as string;
+    const overId = over.id as string;
+
+    // Calcular SIEMPRE la posición para que el indicador se mueva correctamente
+    const dropCalc = calculateDropPosition(overId, columns, activeCardId);
+
+    if (!dropCalc.targetColumn) return;
+
+    // Actualizar SIEMPRE para que el indicador se mueva
+    dragStore.setDragState({
+      isDragging: true,
+      activeCardId,
+      targetColumnId: dropCalc.targetColumn.id,
+      insertPosition: dropCalc.insertAtIndex,
+      calculatedOrder: dropCalc.newOrder,
+    });
+
+    // Notificar al parent SIEMPRE
+    onDragPositionChange?.({
+      isDragging: true,
+      activeCardId,
+      targetColumnId: dropCalc.targetColumn.id,
+      insertPosition: dropCalc.insertAtIndex,
+    });
   };
 
   return (
