@@ -4,7 +4,13 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CardItemProps } from "../types";
 import { CardDisplay } from "./CardDisplay";
 
-export function CardItem({ card, onClick, isLoading = false }: CardItemProps) {
+export function CardItem({
+  card,
+  onClick,
+  onEdit,
+  onDelete,
+  isLoading = false,
+}: CardItemProps) {
   const {
     attributes,
     listeners,
@@ -47,6 +53,9 @@ export function CardItem({ card, onClick, isLoading = false }: CardItemProps) {
     >
       <CardDisplay
         card={card}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        showActions={!isDragging && (!!onEdit || !!onDelete)}
         className={`
           hover:shadow-md transition-shadow 
           ${onClick ? "cursor-pointer" : "cursor-default"}

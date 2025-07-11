@@ -15,7 +15,9 @@ import {
 import { useDroppable } from "@dnd-kit/core";
 import { CardItem } from "../../cards/components/CardItem";
 import { CardFormDialog } from "../../cards/components/CardFormDialog";
+import { DropIndicator } from "../../cards/components/DropIndicator";
 import { useCards } from "../../cards/hooks/useCards";
+import { useDeleteConfirmation } from "../../../shared/hooks/useDeleteConfirmation";
 import type {
   Card as CardType,
   CreateCardDto,
@@ -29,34 +31,84 @@ export function ColumnCard({
   onDelete,
   onColumnUpdate,
   isLoading = false,
+  shouldShowDropIndicator,
+  dragState, 
 }: ColumnCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCreateCardDialog, setShowCreateCardDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [cardCount, setCardCount] = useState(column.cards?.length || 0);
+  const [lastCardOperation, setLastCardOperation] = useState<
+    "create" | "drag" | null
+  >(null);
 
-  const { createCard, updateCard } = useCards();
+  const { createCard, updateCard, deleteCard } = useCards();
+  const {
+    pendingDeleteId,
+    isConfirmOpen,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useDeleteConfirmation();
   const cardsContainerRef = useRef<HTMLDivElement>(null);
 
   const { isOver, setNodeRef } = useDroppable({
     id: column.id,
   });
 
-  // Auto-scroll to bottom when new cards are added
+  // Auto-scroll to bottom when new cards are added (but not during drag operations)
   useEffect(() => {
     const newCardCount = column.cards?.length || 0;
-    if (newCardCount > cardCount && cardsContainerRef.current) {
+
+    // Don't auto-scroll if:
+    // 1. We're in the middle of a drag operation
+    // 2. The last operation was a drag (card moved between columns)
+    // 3. The card count decreased (card was removed/moved out)
+    const isDragging = dragState?.isDragging || false;
+    const cardCountDecreased = newCardCount < cardCount;
+    const cardCountIncreased = newCardCount > cardCount;
+
+    // Only auto-scroll for newly created cards, not for drag & drop operations
+    const shouldAutoScroll =
+      cardCountIncreased &&
+      !isDragging &&
+      !cardCountDecreased &&
+      lastCardOperation === "create";
+
+    if (shouldAutoScroll && cardsContainerRef.current) {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
-        cardsContainerRef.current?.scrollTo({
-          top: cardsContainerRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }, 100);
+        if (cardsContainerRef.current && !dragState?.isDragging) {
+          cardsContainerRef.current.scrollTo({
+            top: cardsContainerRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 150); // Slightly longer delay for better stability
     }
+
     setCardCount(newCardCount);
-  }, [column.cards?.length, cardCount]);
+
+    // Reset the operation type after handling
+    if (lastCardOperation) {
+      const resetTimer = setTimeout(() => setLastCardOperation(null), 300);
+      return () => clearTimeout(resetTimer);
+    }
+  }, [
+    column.cards?.length,
+    cardCount,
+    dragState?.isDragging,
+    lastCardOperation,
+  ]);
+
+  // Additional effect to prevent any auto-scroll during drag state changes
+  useEffect(() => {
+    if (dragState?.isDragging && dragState?.targetColumnId === column.id) {
+      // Mark that this column is receiving a dragged card
+      setLastCardOperation("drag");
+    }
+  }, [dragState?.isDragging, dragState?.targetColumnId, column.id]);
 
   const handleDelete = async () => {
     try {
@@ -71,6 +123,9 @@ export function ColumnCard({
   };
 
   const handleCreateCard = async (data: CreateCardDto) => {
+    // Mark this as a card creation operation for auto-scroll logic
+    setLastCardOperation("create");
+
     // OPTIMISTIC UPDATE: Create temporary card for immediate UI feedback
     const tempCard: CardType = {
       id: `temp-${Date.now()}`, // Temporary ID
@@ -136,17 +191,54 @@ export function ColumnCard({
     setEditingCard(null);
   };
 
-  // const handleDeleteCard = async (cardId: string) => {
-  //   const success = await deleteCard(cardId);
-  //   if (success && onColumnUpdate) {
-  //     // Update the local column without the deleted card
-  //     const updatedColumn = {
-  //       ...column,
-  //       cards: (column.cards || []).filter((card) => card.id !== cardId),
-  //     };
-  //     onColumnUpdate(updatedColumn);
-  //   }
-  // };
+  const handleDeleteCard = async (cardId: string) => {
+    // OPTIMISTIC UPDATE: Remove card immediately for responsive UX
+    if (onColumnUpdate) {
+      const updatedColumn = {
+        ...column,
+        cards: (column.cards || []).filter((card) => card.id !== cardId),
+      };
+      onColumnUpdate(updatedColumn);
+    }
+
+    try {
+      const success = await deleteCard(cardId);
+      if (!success) {
+        // Rollback if delete failed
+        // The card is already removed from UI, so we need to add it back
+        const originalCard = column.cards?.find((card) => card.id === cardId);
+        if (originalCard && onColumnUpdate) {
+          const revertedColumn = {
+            ...column,
+            cards: [...(column.cards || [])].sort((a, b) => a.order - b.order),
+          };
+          onColumnUpdate(revertedColumn);
+        }
+      }
+    } catch (error) {
+      // Rollback on error
+      const originalCard = column.cards?.find((card) => card.id === cardId);
+      if (originalCard && onColumnUpdate) {
+        const revertedColumn = {
+          ...column,
+          cards: [...(column.cards || [])].sort((a, b) => a.order - b.order),
+        };
+        onColumnUpdate(revertedColumn);
+      }
+      console.error("Failed to delete card:", error);
+    }
+  };
+
+  const handleDeleteRequest = (cardId: string) => {
+    requestDelete(cardId);
+  };
+
+  const handleConfirmDelete = async () => {
+    const cardId = confirmDelete();
+    if (cardId) {
+      await handleDeleteCard(cardId);
+    }
+  };
 
   return (
     <>
@@ -199,20 +291,44 @@ export function ColumnCard({
             className="cards-container flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-2 -mr-2"
           >
             {column.cards && column.cards.length > 0 ? (
-              column.cards
-                .sort((a, b) => a.order - b.order)
-                .map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    onClick={(card) => setEditingCard(card)}
-                    isLoading={isLoading}
-                  />
-                ))
+              <>
+                {/* Drop indicator at the beginning */}
+                <DropIndicator
+                  isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
+                />
+
+                {column.cards
+                  .sort((a, b) => a.order - b.order)
+                  .map((card, index) => (
+                    <div key={card.id}>
+                      <CardItem
+                        card={card}
+                        onEdit={(card) => setEditingCard(card)}
+                        onDelete={handleDeleteRequest}
+                        isLoading={isLoading}
+                      />
+
+                      {/* Drop indicator after each card */}
+                      <DropIndicator
+                        isVisible={
+                          shouldShowDropIndicator?.(column.id, index + 1) ||
+                          false
+                        }
+                      />
+                    </div>
+                  ))}
+              </>
             ) : (
-              <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
-                No hay tarjetas
-              </div>
+              <>
+                {/* Drop indicator for empty column */}
+                <DropIndicator
+                  isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
+                />
+
+                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+                  No hay tarjetas
+                </div>
+              </>
             )}
 
             {/* Botón que se mueve junto con las tarjetas inicialmente */}
@@ -283,6 +399,34 @@ export function ColumnCard({
           isLoading={isLoading}
         />
       )}
+
+      {/* Delete Card Confirmation Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={cancelDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar tarjeta?</DialogTitle>
+            <DialogDescription>
+              {pendingDeleteId && (
+                <>
+                  Esta acción eliminará permanentemente la tarjeta &quot;
+                  {column.cards?.find((card) => card.id === pendingDeleteId)
+                    ?.title || "Sin título"}
+                  &quot;. Esta acción no se puede deshacer.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
