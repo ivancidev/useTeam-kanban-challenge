@@ -7,6 +7,7 @@ import { useBoard } from "../hooks/useBoard";
 import { ColumnCard } from "../../columns/components/ColumnCard";
 import { ColumnFormDialog } from "../../columns/components/ColumnFormDialog";
 import { DragDropProvider } from "@/shared/components/DragDropProvider";
+import { useDragStore } from "@/shared/stores/dragStore";
 import type {
   Column,
   CreateColumnDto,
@@ -25,6 +26,15 @@ export function KanbanBoard() {
     moveCard,
     updateColumnState,
   } = useBoard();
+
+  const dragStore = useDragStore();
+  const shouldShowDropIndicator = (columnId: string, position: number) => {
+    return (
+      dragStore.isDragging &&
+      dragStore.targetColumnId === columnId &&
+      dragStore.insertPosition === position
+    );
+  };
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
@@ -53,8 +63,6 @@ export function KanbanBoard() {
   };
 
   const handleColumnUpdate = (updatedColumn: Column) => {
-    // Update the column in the local state immediately for optimistic updates
-    console.log("Updating column in board state:", updatedColumn);
     updateColumnState(updatedColumn);
   };
 
@@ -72,7 +80,13 @@ export function KanbanBoard() {
   }
 
   return (
-    <DragDropProvider columns={columns} onMoveCard={handleMoveCard}>
+    <DragDropProvider
+      columns={columns}
+      onMoveCard={handleMoveCard}
+      onDragPositionChange={(state) => {
+        dragStore.setDragState(state);
+      }}
+    >
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -126,6 +140,13 @@ export function KanbanBoard() {
                         onDelete={handleDeleteColumn}
                         onColumnUpdate={handleColumnUpdate}
                         isLoading={isLoading}
+                        shouldShowDropIndicator={shouldShowDropIndicator}
+                        dragState={{
+                          isDragging: dragStore.isDragging,
+                          activeCardId: dragStore.activeCardId,
+                          targetColumnId: dragStore.targetColumnId,
+                          insertPosition: dragStore.insertPosition,
+                        }}
                       />
                     </div>
                   ))

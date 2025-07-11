@@ -30,16 +30,12 @@ export function useBoard() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Loading default board...");
-
       // Get or create default board
       const board = await boardsApi.getDefaultBoard();
-      console.log("Board loaded:", board);
       setCurrentBoard(board);
 
       // Load columns for this board
       const boardColumns = await columnsApi.getColumns(board.id);
-      console.log("Columns loaded:", boardColumns);
       setColumns(boardColumns);
     } catch (err) {
       const errorMessage =
@@ -58,12 +54,9 @@ export function useBoard() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Creating column:", data);
-
       // Add boardId to the data
       const columnData = { ...data, boardId: currentBoard.id };
       const newColumn = await columnsApi.createColumn(columnData);
-      console.log("Column created:", newColumn);
 
       // Add to local state
       setColumns((prev) => [...prev, newColumn]);
@@ -85,11 +78,7 @@ export function useBoard() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Updating column:", id, data);
-
       const updatedColumn = await columnsApi.updateColumn(id, data);
-      console.log("Column updated:", updatedColumn);
-
       // Update local state
       setColumns((prev) =>
         prev.map((col) => (col.id === id ? updatedColumn : col))
@@ -112,11 +101,7 @@ export function useBoard() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Deleting column:", id);
-
       await columnsApi.deleteColumn(id);
-      console.log("Column deleted:", id);
-
       // Remove from local state
       setColumns((prev) => prev.filter((col) => col.id !== id));
       notifySuccess("Columna eliminada exitosamente");
