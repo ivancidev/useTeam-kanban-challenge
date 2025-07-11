@@ -13,8 +13,6 @@ import type {
 } from "../../columns/types";
 import type {
   Card,
-  CreateCardDto,
-  UpdateCardDto,
   MoveCardDto,
 } from "../../cards/types";
 
@@ -79,7 +77,6 @@ export function useBoard() {
       setError(null);
 
       const updatedColumn = await columnsApi.updateColumn(id, data);
-      // Update local state
       setColumns((prev) =>
         prev.map((col) => (col.id === id ? updatedColumn : col))
       );
@@ -151,7 +148,6 @@ export function useBoard() {
     const isSameOrder = Math.abs((currentOrder || 0) - newOrder) < 0.001; // Use small epsilon for decimal comparison
 
     if (isSameColumn && isSameOrder) {
-      console.log("Card already in the same position, skipping move");
       return; // No notification, no API call
     }
 
@@ -230,7 +226,7 @@ export function useBoard() {
         });
       });
 
-      // Only show success notification for meaningful moves (between columns)
+
       if (!isSameColumn) {
         notifySuccess("Tarjeta movida exitosamente");
       }
@@ -284,7 +280,58 @@ export function useBoard() {
     );
   };
 
-  // Load board on mount
+  const moveColumn = async (columnId: string, newOrder: number) => {
+    const currentColumn = columns.find((col) => col.id === columnId);
+    if (!currentColumn) {
+      console.error("Column not found:", columnId);
+      return;
+    }
+
+    // Check if this is actually a move
+    if (Math.abs(currentColumn.order - newOrder) < 0.001) {
+      return;
+    }
+    // OPTIMISTIC UPDATE: Update UI immediately
+    const optimisticColumn = { ...currentColumn, order: newOrder };
+
+    setColumns((prevColumns) => {
+      return prevColumns
+        .map((col) => (col.id === columnId ? optimisticColumn : col))
+        .sort((a, b) => a.order - b.order);
+    });
+
+    try {
+      // Make API call to update column order
+      const updatedColumn = await columnsApi.updateColumn(columnId, {
+        order: newOrder,
+      });
+
+      // Update with server response
+      setColumns((prevColumns) =>
+        prevColumns
+          .map((col) => (col.id === columnId ? updatedColumn : col))
+          .sort((a, b) => a.order - b.order)
+      );
+
+      notifySuccess("Columna reordenada exitosamente");
+    } catch (err) {
+      // ROLLBACK: Revert optimistic update on error
+      console.error("Error moving column, rolling back:", err);
+
+      setColumns((prevColumns) =>
+        prevColumns
+          .map((col) => (col.id === columnId ? currentColumn : col))
+          .sort((a, b) => a.order - b.order)
+      );
+
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to move column";
+      setError(errorMessage);
+      notifyError("Error al reordenar la columna");
+      throw err;
+    }
+  };
+
   useEffect(() => {
     loadBoard();
   }, []);
@@ -299,6 +346,7 @@ export function useBoard() {
     editColumn,
     deleteColumn,
     moveCard,
+    moveColumn,
     updateColumnState,
     clearError,
   };

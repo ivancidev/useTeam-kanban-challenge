@@ -24,10 +24,12 @@ export function KanbanBoard() {
     deleteColumn,
     loadBoard,
     moveCard,
+    moveColumn,
     updateColumnState,
   } = useBoard();
 
   const dragStore = useDragStore();
+
   const shouldShowDropIndicator = (columnId: string, position: number) => {
     return (
       dragStore.isDragging &&
@@ -83,12 +85,12 @@ export function KanbanBoard() {
     <DragDropProvider
       columns={columns}
       onMoveCard={handleMoveCard}
+      onMoveColumn={moveColumn}
       onDragPositionChange={(state) => {
         dragStore.setDragState(state);
       }}
     >
       <div className="p-4">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tablero Kanban</h1>
@@ -129,26 +131,26 @@ export function KanbanBoard() {
                   ))}
                 </>
               ) : columns.length > 0 ? (
-                // Columns
+                // Columns with drag and drop
                 columns
                   .sort((a, b) => a.order - b.order)
-                  .map((column) => (
-                    <div key={column.id} className="flex-shrink-0">
-                      <ColumnCard
-                        column={column}
-                        onEdit={setEditingColumn}
-                        onDelete={handleDeleteColumn}
-                        onColumnUpdate={handleColumnUpdate}
-                        isLoading={isLoading}
-                        shouldShowDropIndicator={shouldShowDropIndicator}
-                        dragState={{
-                          isDragging: dragStore.isDragging,
-                          activeCardId: dragStore.activeCardId,
-                          targetColumnId: dragStore.targetColumnId,
-                          insertPosition: dragStore.insertPosition,
-                        }}
-                      />
-                    </div>
+                  .map((column, index) => (
+                    <ColumnCard
+                      key={column.id}
+                      column={column}
+                      index={index}
+                      onEdit={setEditingColumn}
+                      onDelete={handleDeleteColumn}
+                      onColumnUpdate={handleColumnUpdate}
+                      isLoading={isLoading}
+                      shouldShowDropIndicator={shouldShowDropIndicator}
+                      dragState={{
+                        isDragging: dragStore.isDragging,
+                        activeCardId: dragStore.activeCardId,
+                        targetColumnId: dragStore.targetColumnId,
+                        insertPosition: dragStore.insertPosition,
+                      }}
+                    />
                   ))
               ) : (
                 <div className="flex items-center justify-center w-full h-64">
