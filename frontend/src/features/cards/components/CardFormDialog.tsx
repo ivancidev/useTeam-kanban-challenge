@@ -113,6 +113,7 @@ export function CardFormDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descripción opcional de la tarjeta"
                 rows={3}
+                className="min-h-[80px] max-h-[120px] resize-none overflow-y-auto"
                 disabled={isLoading}
               />
             </div>

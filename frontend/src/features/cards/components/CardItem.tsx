@@ -2,6 +2,7 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CardItemProps } from "../types";
+import { CardDisplay } from "./CardDisplay";
 
 export function CardItem({ card, onClick, isLoading = false }: CardItemProps) {
   const {
@@ -42,20 +43,18 @@ export function CardItem({ card, onClick, isLoading = false }: CardItemProps) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`
-        p-3 bg-white rounded-lg border border-gray-200 shadow-sm 
-        hover:shadow-md transition-shadow 
-        ${onClick ? "cursor-pointer" : "cursor-default"}
-        ${isLoading ? "opacity-50" : ""}
-        ${isDragging ? "opacity-30 scale-95" : ""}
-        ${isOver ? "border-blue-300 bg-blue-50" : ""}
-      `}
       onClick={handleClick}
     >
-      <h4 className="font-medium text-gray-900 text-sm mb-1">{card.title}</h4>
-      {card.description && (
-        <p className="text-xs text-gray-600 line-clamp-2">{card.description}</p>
-      )}
+      <CardDisplay
+        card={card}
+        className={`
+          hover:shadow-md transition-shadow 
+          ${onClick ? "cursor-pointer" : "cursor-default"}
+          ${isLoading ? "opacity-50" : ""}
+          ${isDragging ? "opacity-30 scale-95" : ""}
+          ${isOver ? "border-blue-300 bg-blue-50" : ""}
+        `}
+      />
     </div>
   );
 }
