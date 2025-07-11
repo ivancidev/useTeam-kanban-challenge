@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -15,9 +15,11 @@ import {
 import { useDroppable } from "@dnd-kit/core";
 import { CardItem } from "../../cards/components/CardItem";
 import { CardFormDialog } from "../../cards/components/CardFormDialog";
+import { CardDetailModal } from "../../cards/components/CardDetailModal";
 import { DropIndicator } from "../../cards/components/DropIndicator";
 import { useCards } from "../../cards/hooks/useCards";
 import { useDeleteConfirmation } from "../../../shared/hooks/useDeleteConfirmation";
+import { useColumnDragHandle } from "../../../shared/hooks/useColumnDragHandle";
 import type {
   Card as CardType,
   CreateCardDto,
@@ -27,6 +29,7 @@ import { ColumnCardProps } from "../types";
 
 export function ColumnCard({
   column,
+  index,
   onEdit,
   onDelete,
   onColumnUpdate,
@@ -53,9 +56,26 @@ export function ColumnCard({
   } = useDeleteConfirmation();
   const cardsContainerRef = useRef<HTMLDivElement>(null);
 
-  const { isOver, setNodeRef } = useDroppable({
+  // Hook para el drag de columnas
+  const {
+    dragRef,
+    dragHandleProps,
+    style: dragStyle,
+    isDragging,
+  } = useColumnDragHandle({
+    columnId: column.id,
+    index,
+  });
+
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
     id: column.id,
   });
+
+  // Combinar las refs para que funcionen tanto el drop como el drag
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDroppableRef(node);
+    dragRef(node);
+  };
 
   // Auto-scroll to bottom when new cards are added (but not during drag operations)
   useEffect(() => {
@@ -170,7 +190,6 @@ export function ColumnCard({
         onColumnUpdate(updatedColumn);
       }
       console.error("Failed to create card:", error);
-      // Don't close dialog on error so user can retry
     }
   };
 
@@ -187,8 +206,12 @@ export function ColumnCard({
         ),
       };
       onColumnUpdate(updatedColumn);
+
+      // Actualizar el estado editingCard con los nuevos datos para reflejar los cambios
+      setEditingCard(updatedCard);
     }
-    setEditingCard(null);
+   
+    // setEditingCard(null); // <- Comentado para mantener el modal abierto
   };
 
   const handleDeleteCard = async (cardId: string) => {
@@ -244,19 +267,31 @@ export function ColumnCard({
     <>
       <Card
         ref={setNodeRef}
+        style={dragStyle}
         className={`w-80 bg-gray-50 border-gray-200 hover:shadow-md transition-shadow flex flex-col h-[calc(100vh-8rem)] max-h-[600px] ${
           isOver ? "bg-blue-50 border-blue-300" : ""
-        }`}
+        } ${isDragging ? "opacity-50" : ""}`}
       >
         <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 truncate">
-                {column.name}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {cardCount} {cardCount === 1 ? "tarjeta" : "tarjetas"}
-              </p>
+            <div className="flex items-center gap-2 flex-1">
+              {/* Drag handle indicator */}
+              <div
+                {...dragHandleProps}
+                className="text-gray-400 hover:text-gray-600 cursor-move transition-colors"
+                title="Arrastra para reordenar"
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 truncate">
+                  {column.name}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {cardCount} {cardCount === 1 ? "tarjeta" : "tarjetas"}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-1 ml-2">
@@ -303,6 +338,7 @@ export function ColumnCard({
                     <div key={card.id}>
                       <CardItem
                         card={card}
+                        onClick={(card) => setEditingCard(card)} // Hacer clic en tarjeta abre modal detallado
                         onEdit={(card) => setEditingCard(card)}
                         onDelete={handleDeleteRequest}
                         isLoading={isLoading}
@@ -387,16 +423,15 @@ export function ColumnCard({
         isLoading={isLoading}
       />
 
-      {/* Edit Card Dialog */}
+      {/* Edit Card Dialog - Usar CardDetailModal para edición completa */}
       {editingCard && (
-        <CardFormDialog
+        <CardDetailModal
           isOpen={true}
           onClose={() => setEditingCard(null)}
-          onSubmit={handleCreateCard}
-          onEdit={handleEditCard}
           card={editingCard}
-          columnId={column.id}
-          isLoading={isLoading}
+          onSave={handleEditCard}
+          onDelete={() => handleDeleteRequest(editingCard.id)}
+          columnName={column.name}
         />
       )}
 

@@ -23,6 +23,7 @@ export interface UpdateColumnDto {
 
 export interface ColumnCardProps {
   column: Column;
+  index: number; 
   onEdit: (column: Column) => void;
   onDelete: (columnId: string) => void;
   onColumnUpdate?: (updatedColumn: Column) => void;
