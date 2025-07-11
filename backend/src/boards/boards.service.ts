@@ -76,4 +76,56 @@ export class BoardsService {
       where: { id },
     });
   }
+
+  async getOrCreateDefaultBoard() {
+    // Intentar encontrar un board existente
+    let board = await this.prisma.board.findFirst({
+      include: {
+        columns: {
+          include: {
+            cards: {
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
+    });
+
+    // Si no existe, crear uno nuevo con columnas por defecto
+    if (!board) {
+      board = await this.prisma.board.create({
+        data: {
+          name: 'Mi Tablero Kanban',
+          columns: {
+            create: [
+              { name: 'Por Hacer', order: 0 },
+              { name: 'En Progreso', order: 1 },
+              { name: 'Completado', order: 2 },
+            ],
+          },
+        },
+        include: {
+          columns: {
+            include: {
+              cards: {
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      });
+    }
+
+    return board;
+  }
 }
