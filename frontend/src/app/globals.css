@@ -120,3 +120,50 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom scrollbar styles for column cards */
+.cards-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cards-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.cards-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.cards-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom horizontal scrollbar for kanban board */
+.kanban-horizontal-scroll::-webkit-scrollbar {
+  height: 12px;
+}
+
+.kanban-horizontal-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+  margin: 0 4px;
+}
+
+.kanban-horizontal-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+.kanban-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Better scrollbar for Firefox and other browsers */
+.kanban-horizontal-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
