@@ -1,17 +1,17 @@
 import { create } from "zustand";
-
-interface DragState {
-  isDragging: boolean;
-  activeCardId: string | null;
-  targetColumnId: string | null;
-  insertPosition: number | null;
-  calculatedOrder: number | null;
-}
+import { DragState } from "../types";
 
 interface DragStore extends DragState {
   setDragState: (state: Partial<DragState>) => void;
   resetDragState: () => void;
   setCalculatedOrder: (order: number) => void;
+  // Column drag methods
+  setColumnDragState: (state: {
+    isDraggingColumn: boolean;
+    activeColumnId?: string | null;
+    targetColumnIndex?: number | null;
+  }) => void;
+  resetColumnDragState: () => void;
 }
 
 const initialState: DragState = {
@@ -20,6 +20,9 @@ const initialState: DragState = {
   targetColumnId: null,
   insertPosition: null,
   calculatedOrder: null,
+  isDraggingColumn: false,
+  activeColumnId: null,
+  targetColumnIndex: null,
 };
 
 export const useDragStore = create<DragStore>((set) => ({
@@ -31,4 +34,21 @@ export const useDragStore = create<DragStore>((set) => ({
 
   setCalculatedOrder: (order) =>
     set((state) => ({ ...state, calculatedOrder: order })),
+
+  setColumnDragState: (columnState) =>
+    set((state) => ({
+      ...state,
+      isDraggingColumn: columnState.isDraggingColumn,
+      activeColumnId: columnState.activeColumnId ?? state.activeColumnId,
+      targetColumnIndex:
+        columnState.targetColumnIndex ?? state.targetColumnIndex,
+    })),
+
+  resetColumnDragState: () =>
+    set((state) => ({
+      ...state,
+      isDraggingColumn: false,
+      activeColumnId: null,
+      targetColumnIndex: null,
+    })),
 }));
