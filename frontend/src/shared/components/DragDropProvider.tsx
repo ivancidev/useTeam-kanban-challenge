@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import type { Card } from "../../features/cards/types";
 import type { Column } from "../../features/columns/types";
+import { CardDisplay } from "../../features/cards/components/CardDisplay";
 
 interface DragDropProviderProps {
   children: React.ReactNode;
@@ -156,14 +157,7 @@ export function DragDropProvider({
       {children}
       <DragOverlay dropAnimation={dropAnimation}>
         {activeCard ? (
-          <div className="bg-white p-4 rounded-lg shadow-lg border opacity-90">
-            <h3 className="font-medium text-gray-900">{activeCard.title}</h3>
-            {activeCard.description && (
-              <p className="text-sm text-gray-600 mt-2">
-                {activeCard.description}
-              </p>
-            )}
-          </div>
+          <CardDisplay card={activeCard} className="shadow-lg opacity-90" />
         ) : null}
       </DragOverlay>
     </DndContext>

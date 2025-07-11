@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -34,12 +34,29 @@ export function ColumnCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCreateCardDialog, setShowCreateCardDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
+  const [cardCount, setCardCount] = useState(column.cards?.length || 0);
 
-  const { createCard, updateCard, deleteCard } = useCards();
+  const { createCard, updateCard } = useCards();
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
 
   const { isOver, setNodeRef } = useDroppable({
     id: column.id,
   });
+
+  // Auto-scroll to bottom when new cards are added
+  useEffect(() => {
+    const newCardCount = column.cards?.length || 0;
+    if (newCardCount > cardCount && cardsContainerRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        cardsContainerRef.current?.scrollTo({
+          top: cardsContainerRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 100);
+    }
+    setCardCount(newCardCount);
+  }, [column.cards?.length, cardCount]);
 
   const handleDelete = async () => {
     try {
@@ -54,16 +71,52 @@ export function ColumnCard({
   };
 
   const handleCreateCard = async (data: CreateCardDto) => {
-    const newCard = await createCard(data);
-    if (newCard && onColumnUpdate) {
-      // Update the local column with the new card
+    // OPTIMISTIC UPDATE: Create temporary card for immediate UI feedback
+    const tempCard: CardType = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      title: data.title,
+      description: data.description || "",
+      columnId: column.id,
+      order: (column.cards?.length || 0) + 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Update UI immediately
+    if (onColumnUpdate) {
       const updatedColumn = {
         ...column,
-        cards: [...(column.cards || []), newCard],
+        cards: [...(column.cards || []), tempCard],
       };
       onColumnUpdate(updatedColumn);
     }
-    setShowCreateCardDialog(false);
+
+    try {
+      const newCard = await createCard(data);
+      if (newCard && onColumnUpdate) {
+        // Replace temp card with real card from server
+        const updatedColumn = {
+          ...column,
+          cards: [
+            ...(column.cards || []).filter((card) => card.id !== tempCard.id),
+            newCard,
+          ],
+        };
+        onColumnUpdate(updatedColumn);
+      }
+      setShowCreateCardDialog(false);
+    } catch (error) {
+      // Rollback optimistic update on error
+      if (onColumnUpdate) {
+        const updatedColumn = {
+          ...column,
+          cards: (column.cards || []).filter((card) => card.id !== tempCard.id),
+        };
+        onColumnUpdate(updatedColumn);
+      }
+      console.error("Failed to create card:", error);
+      // Don't close dialog on error so user can retry
+    }
   };
 
   const handleEditCard = async (data: UpdateCardDto) => {
@@ -83,29 +136,27 @@ export function ColumnCard({
     setEditingCard(null);
   };
 
-  const handleDeleteCard = async (cardId: string) => {
-    const success = await deleteCard(cardId);
-    if (success && onColumnUpdate) {
-      // Update the local column without the deleted card
-      const updatedColumn = {
-        ...column,
-        cards: (column.cards || []).filter((card) => card.id !== cardId),
-      };
-      onColumnUpdate(updatedColumn);
-    }
-  };
-
-  const cardCount = column.cards?.length || 0;
+  // const handleDeleteCard = async (cardId: string) => {
+  //   const success = await deleteCard(cardId);
+  //   if (success && onColumnUpdate) {
+  //     // Update the local column without the deleted card
+  //     const updatedColumn = {
+  //       ...column,
+  //       cards: (column.cards || []).filter((card) => card.id !== cardId),
+  //     };
+  //     onColumnUpdate(updatedColumn);
+  //   }
+  // };
 
   return (
     <>
       <Card
         ref={setNodeRef}
-        className={`w-80 bg-gray-50 border-gray-200 hover:shadow-md transition-shadow ${
+        className={`w-80 bg-gray-50 border-gray-200 hover:shadow-md transition-shadow flex flex-col h-[calc(100vh-8rem)] max-h-[600px] ${
           isOver ? "bg-blue-50 border-blue-300" : ""
         }`}
       >
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 truncate">
@@ -142,33 +193,41 @@ export function ColumnCard({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
-          <div className="min-h-[200px] space-y-2">
+        <CardContent className="pt-0 flex-1 flex flex-col overflow-hidden">
+          <div
+            ref={cardsContainerRef}
+            className="cards-container flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-2 -mr-2"
+          >
             {column.cards && column.cards.length > 0 ? (
-              column.cards.map((card) => (
-                <CardItem
-                  key={card.id}
-                  card={card}
-                  onClick={(card) => setEditingCard(card)}
-                  isLoading={isLoading}
-                />
-              ))
+              column.cards
+                .sort((a, b) => a.order - b.order)
+                .map((card) => (
+                  <CardItem
+                    key={card.id}
+                    card={card}
+                    onClick={(card) => setEditingCard(card)}
+                    isLoading={isLoading}
+                  />
+                ))
             ) : (
               <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
                 No hay tarjetas
               </div>
             )}
-          </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-3 text-gray-600 border-dashed hover:bg-gray-50"
-            disabled={isLoading}
-            onClick={() => setShowCreateCardDialog(true)}
-          >
-            + Agregar tarjeta
-          </Button>
+            {/* Botón que se mueve junto con las tarjetas inicialmente */}
+            <div className="pt-3 sticky bottom-0 bg-gray-50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-gray-600 border-dashed hover:bg-gray-50"
+                disabled={isLoading}
+                onClick={() => setShowCreateCardDialog(true)}
+              >
+                + Agregar tarjeta
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
