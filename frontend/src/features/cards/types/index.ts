@@ -26,7 +26,6 @@ export interface MoveCardDto {
   order: number;
 }
 
-
 export interface CardFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,5 +39,7 @@ export interface CardFormDialogProps {
 export interface CardItemProps {
   card: Card;
   onClick?: (card: Card) => void;
+  onEdit?: (card: Card) => void;
+  onDelete?: (cardId: string) => void;
   isLoading?: boolean;
 }
