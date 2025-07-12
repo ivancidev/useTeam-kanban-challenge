@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useCardFormDialog } from "../hooks";
 import { CardFormDialogProps } from "../types";
 
 export function CardFormDialog({
@@ -24,53 +24,23 @@ export function CardFormDialog({
   columnId,
   isLoading = false,
 }: CardFormDialogProps) {
-  const [title, setTitle] = useState(card?.title || "");
-  const [description, setDescription] = useState(card?.description || "");
-  const [errors, setErrors] = useState<{ title?: string }>({});
-
-  const isEditing = !!card;
-
-  const validateForm = () => {
-    const newErrors: { title?: string } = {};
-
-    if (!title.trim()) {
-      newErrors.title = "El título es requerido";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    if (isEditing && onEdit) {
-      onEdit({
-        title: title.trim(),
-        description: description.trim() || undefined,
-      });
-    } else {
-      onSubmit({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        columnId,
-      });
-    }
-
-    // Reset form
-    setTitle("");
-    setDescription("");
-    setErrors({});
-  };
-
-  const handleClose = () => {
-    setTitle(card?.title || "");
-    setDescription(card?.description || "");
-    setErrors({});
-    onClose();
-  };
+  const {
+    title,
+    description,
+    errors,
+    isEditing,
+    setTitle,
+    setDescription,
+    handleSubmit,
+    handleClose,
+  } = useCardFormDialog({
+    card,
+    columnId,
+    onSubmit,
+    onEdit,
+    onClose,
+    isLoading,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

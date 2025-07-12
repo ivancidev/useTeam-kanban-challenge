@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   X,
   Edit3,
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useCardDetailModal } from "../hooks";
 import { CardDetailModalProps } from "../types";
 
 export function CardDetailModal({
@@ -26,51 +26,21 @@ export function CardDetailModal({
   onDelete,
   columnName,
 }: CardDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(card.title);
-  const [description, setDescription] = useState(card.description || "");
-  const [newComment, setNewComment] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Actualizar el estado local cuando cambie el card prop, pero solo si no estamos editando
-  useEffect(() => {
-    if (!isEditing) {
-      setTitle(card.title);
-      setDescription(card.description || "");
-    }
-  }, [card, isEditing]);
-
-  const handleSave = async () => {
-    if (!title.trim()) return;
-
-    setIsLoading(true);
-    try {
-      await onSave({
-        title: title.trim(),
-        description: description.trim(),
-      });
-
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Error saving card:", error);
-      setTitle(card.title);
-      setDescription(card.description || "");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setTitle(card.title);
-    setDescription(card.description || "");
-    setIsEditing(false);
-  };
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    // TODO: Implementar añadir comentario
-    setNewComment("");
-  };
+  const {
+    isEditing,
+    title,
+    description,
+    newComment,
+    isLoading,
+    setTitle,
+    setDescription,
+    setNewComment,
+    handleSave,
+    handleCancel,
+    handleAddComment,
+    startEditing,
+    clearComment,
+  } = useCardDetailModal({ card, onSave });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -101,7 +71,7 @@ export function CardDetailModal({
                 ) : (
                   <h1
                     className="text-2xl font-bold text-slate-800 cursor-pointer hover:bg-blue-50 rounded-lg p-3 -m-3 transition-colors border-2 border-transparent hover:border-blue-200 break-words"
-                    onClick={() => setIsEditing(true)}
+                    onClick={startEditing}
                   >
                     {title}
                   </h1>
@@ -157,7 +127,7 @@ export function CardDetailModal({
                   ) : (
                     <div
                       className="cursor-pointer hover:bg-green-50 rounded-lg p-3 -m-3 transition-colors border-2 border-transparent hover:border-green-200"
-                      onClick={() => setIsEditing(true)}
+                      onClick={startEditing}
                     >
                       {description ? (
                         <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
@@ -176,7 +146,7 @@ export function CardDetailModal({
                   <Button
                     variant="ghost"
                     className="text-left justify-start p-3 h-auto text-slate-500 hover:bg-green-50 rounded-lg border-2 border-dashed border-slate-200 hover:border-green-300 w-full transition-colors"
-                    onClick={() => setIsEditing(true)}
+                    onClick={startEditing}
                   >
                     <span className="text-left">
                       Añadir una descripción más detallada...
@@ -222,7 +192,7 @@ export function CardDetailModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setNewComment("")}
+                          onClick={clearComment}
                           className="text-slate-600 hover:bg-slate-100"
                         >
                           Cancelar
