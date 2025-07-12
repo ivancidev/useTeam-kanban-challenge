@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { Edit, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,19 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CardItem } from "../../cards/components/CardItem";
 import { CardFormDialog } from "../../cards/components/CardFormDialog";
 import { CardDetailModal } from "../../cards/components/CardDetailModal";
 import { DropIndicator } from "../../cards/components/DropIndicator";
-import { useCards } from "../../cards/hooks/useCards";
-import { useDeleteConfirmation } from "../../../shared/hooks/useDeleteConfirmation";
-import { useColumnDragHandle } from "../../../shared/hooks/useColumnDragHandle";
-import type {
-  Card as CardType,
-  CreateCardDto,
-  UpdateCardDto,
-} from "../../cards/types";
+import { useColumnCard } from "../hooks";
 import { ColumnCardProps } from "../types";
 
 export function ColumnCard({
@@ -35,233 +30,45 @@ export function ColumnCard({
   onColumnUpdate,
   isLoading = false,
   shouldShowDropIndicator,
-  dragState, 
+  dragState,
 }: ColumnCardProps) {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showCreateCardDialog, setShowCreateCardDialog] = useState(false);
-  const [editingCard, setEditingCard] = useState<CardType | null>(null);
-  const [cardCount, setCardCount] = useState(column.cards?.length || 0);
-  const [lastCardOperation, setLastCardOperation] = useState<
-    "create" | "drag" | null
-  >(null);
-
-  const { createCard, updateCard, deleteCard } = useCards();
   const {
+    showDeleteDialog,
+    isDeleting,
+    showCreateCardDialog,
+    editingCard,
+    cardCount,
+    isOver,
+    isDragging,
     pendingDeleteId,
     isConfirmOpen,
-    requestDelete,
-    confirmDelete,
-    cancelDelete,
-  } = useDeleteConfirmation();
-  const cardsContainerRef = useRef<HTMLDivElement>(null);
-
-  // Hook para el drag de columnas
-  const {
-    dragRef,
+    setNodeRef,
+    setCardsContainerRef,
     dragHandleProps,
-    style: dragStyle,
-    isDragging,
-  } = useColumnDragHandle({
-    columnId: column.id,
+    dragStyle,
+    handleDelete,
+    handleCreateCard,
+    handleEditCard,
+    handleDeleteRequest,
+    handleConfirmDelete,
+    handleEditColumn,
+    handleOpenDeleteDialog,
+    handleCloseDeleteDialog,
+    handleOpenCreateCardDialog,
+    handleCloseCreateCardDialog,
+    handleOpenEditCard,
+    handleCloseEditCard,
+    cancelDelete,
+  } = useColumnCard({
+    column,
     index,
+    onEdit,
+    onDelete,
+    onColumnUpdate,
+    isLoading,
+    shouldShowDropIndicator,
+    dragState,
   });
-
-  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
-    id: column.id,
-  });
-
-  // Combinar las refs para que funcionen tanto el drop como el drag
-  const setNodeRef = (node: HTMLElement | null) => {
-    setDroppableRef(node);
-    dragRef(node);
-  };
-
-  // Auto-scroll to bottom when new cards are added (but not during drag operations)
-  useEffect(() => {
-    const newCardCount = column.cards?.length || 0;
-
-    // Don't auto-scroll if:
-    // 1. We're in the middle of a drag operation
-    // 2. The last operation was a drag (card moved between columns)
-    // 3. The card count decreased (card was removed/moved out)
-    const isDragging = dragState?.isDragging || false;
-    const cardCountDecreased = newCardCount < cardCount;
-    const cardCountIncreased = newCardCount > cardCount;
-
-    // Only auto-scroll for newly created cards, not for drag & drop operations
-    const shouldAutoScroll =
-      cardCountIncreased &&
-      !isDragging &&
-      !cardCountDecreased &&
-      lastCardOperation === "create";
-
-    if (shouldAutoScroll && cardsContainerRef.current) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        if (cardsContainerRef.current && !dragState?.isDragging) {
-          cardsContainerRef.current.scrollTo({
-            top: cardsContainerRef.current.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, 150); // Slightly longer delay for better stability
-    }
-
-    setCardCount(newCardCount);
-
-    // Reset the operation type after handling
-    if (lastCardOperation) {
-      const resetTimer = setTimeout(() => setLastCardOperation(null), 300);
-      return () => clearTimeout(resetTimer);
-    }
-  }, [
-    column.cards?.length,
-    cardCount,
-    dragState?.isDragging,
-    lastCardOperation,
-  ]);
-
-  // Additional effect to prevent any auto-scroll during drag state changes
-  useEffect(() => {
-    if (dragState?.isDragging && dragState?.targetColumnId === column.id) {
-      // Mark that this column is receiving a dragged card
-      setLastCardOperation("drag");
-    }
-  }, [dragState?.isDragging, dragState?.targetColumnId, column.id]);
-
-  const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      await onDelete(column.id);
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error("Failed to delete column:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleCreateCard = async (data: CreateCardDto) => {
-    // Mark this as a card creation operation for auto-scroll logic
-    setLastCardOperation("create");
-
-    // OPTIMISTIC UPDATE: Create temporary card for immediate UI feedback
-    const tempCard: CardType = {
-      id: `temp-${Date.now()}`, // Temporary ID
-      title: data.title,
-      description: data.description || "",
-      columnId: column.id,
-      order: (column.cards?.length || 0) + 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // Update UI immediately
-    if (onColumnUpdate) {
-      const updatedColumn = {
-        ...column,
-        cards: [...(column.cards || []), tempCard],
-      };
-      onColumnUpdate(updatedColumn);
-    }
-
-    try {
-      const newCard = await createCard(data);
-      if (newCard && onColumnUpdate) {
-        // Replace temp card with real card from server
-        const updatedColumn = {
-          ...column,
-          cards: [
-            ...(column.cards || []).filter((card) => card.id !== tempCard.id),
-            newCard,
-          ],
-        };
-        onColumnUpdate(updatedColumn);
-      }
-      setShowCreateCardDialog(false);
-    } catch (error) {
-      // Rollback optimistic update on error
-      if (onColumnUpdate) {
-        const updatedColumn = {
-          ...column,
-          cards: (column.cards || []).filter((card) => card.id !== tempCard.id),
-        };
-        onColumnUpdate(updatedColumn);
-      }
-      console.error("Failed to create card:", error);
-    }
-  };
-
-  const handleEditCard = async (data: UpdateCardDto) => {
-    if (!editingCard) return;
-
-    const updatedCard = await updateCard(editingCard.id, data);
-    if (updatedCard && onColumnUpdate) {
-      // Update the local column with the updated card
-      const updatedColumn = {
-        ...column,
-        cards: (column.cards || []).map((card) =>
-          card.id === editingCard.id ? updatedCard : card
-        ),
-      };
-      onColumnUpdate(updatedColumn);
-
-      // Actualizar el estado editingCard con los nuevos datos para reflejar los cambios
-      setEditingCard(updatedCard);
-    }
-   
-    // setEditingCard(null); // <- Comentado para mantener el modal abierto
-  };
-
-  const handleDeleteCard = async (cardId: string) => {
-    // OPTIMISTIC UPDATE: Remove card immediately for responsive UX
-    if (onColumnUpdate) {
-      const updatedColumn = {
-        ...column,
-        cards: (column.cards || []).filter((card) => card.id !== cardId),
-      };
-      onColumnUpdate(updatedColumn);
-    }
-
-    try {
-      const success = await deleteCard(cardId);
-      if (!success) {
-        // Rollback if delete failed
-        // The card is already removed from UI, so we need to add it back
-        const originalCard = column.cards?.find((card) => card.id === cardId);
-        if (originalCard && onColumnUpdate) {
-          const revertedColumn = {
-            ...column,
-            cards: [...(column.cards || [])].sort((a, b) => a.order - b.order),
-          };
-          onColumnUpdate(revertedColumn);
-        }
-      }
-    } catch (error) {
-      // Rollback on error
-      const originalCard = column.cards?.find((card) => card.id === cardId);
-      if (originalCard && onColumnUpdate) {
-        const revertedColumn = {
-          ...column,
-          cards: [...(column.cards || [])].sort((a, b) => a.order - b.order),
-        };
-        onColumnUpdate(revertedColumn);
-      }
-      console.error("Failed to delete card:", error);
-    }
-  };
-
-  const handleDeleteRequest = (cardId: string) => {
-    requestDelete(cardId);
-  };
-
-  const handleConfirmDelete = async () => {
-    const cardId = confirmDelete();
-    if (cardId) {
-      await handleDeleteCard(cardId);
-    }
-  };
 
   return (
     <>
@@ -298,7 +105,7 @@ export function ColumnCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onEdit(column)}
+                onClick={handleEditColumn}
                 disabled={isLoading}
                 className="h-8 w-8 p-0 hover:bg-gray-200"
                 title="Editar columna"
@@ -309,7 +116,7 @@ export function ColumnCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowDeleteDialog(true)}
+                onClick={handleOpenDeleteDialog}
                 disabled={isLoading}
                 className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
                 title="Eliminar columna"
@@ -322,50 +129,55 @@ export function ColumnCard({
 
         <CardContent className="pt-0 flex-1 flex flex-col overflow-hidden">
           <div
-            ref={cardsContainerRef}
-            className="cards-container flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-2 -mr-2"
+            ref={setCardsContainerRef}
+            className="cards-container flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-2 -mr-2 min-h-[100px]"
           >
-            {column.cards && column.cards.length > 0 ? (
-              <>
-                {/* Drop indicator at the beginning */}
-                <DropIndicator
-                  isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
-                />
+            {/* Drop indicator for empty column - always show when dragging over empty space */}
+            {(!column.cards || column.cards.length === 0) && (
+              <DropIndicator
+                isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
+              />
+            )}
 
-                {column.cards
-                  .sort((a, b) => a.order - b.order)
-                  .map((card, index) => (
-                    <div key={card.id}>
-                      <CardItem
-                        card={card}
-                        onClick={(card) => setEditingCard(card)} // Hacer clic en tarjeta abre modal detallado
-                        onEdit={(card) => setEditingCard(card)}
-                        onDelete={handleDeleteRequest}
-                        isLoading={isLoading}
-                      />
+            <SortableContext
+              items={column.cards?.map((card) => card.id) || []}
+              strategy={verticalListSortingStrategy}
+            >
+              {column.cards && column.cards.length > 0 ? (
+                <>
+                  {/* Drop indicator at the beginning */}
+                  <DropIndicator
+                    isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
+                  />
 
-                      {/* Drop indicator after each card */}
-                      <DropIndicator
-                        isVisible={
-                          shouldShowDropIndicator?.(column.id, index + 1) ||
-                          false
-                        }
-                      />
-                    </div>
-                  ))}
-              </>
-            ) : (
-              <>
-                {/* Drop indicator for empty column */}
-                <DropIndicator
-                  isVisible={shouldShowDropIndicator?.(column.id, 0) || false}
-                />
+                  {column.cards
+                    .sort((a, b) => a.order - b.order)
+                    .map((card, index) => (
+                      <div key={card.id}>
+                        <CardItem
+                          card={card}
+                          onClick={handleOpenEditCard}
+                          onEdit={handleOpenEditCard}
+                          onDelete={handleDeleteRequest}
+                          isLoading={isLoading}
+                        />
 
+                        {/* Drop indicator after each card */}
+                        <DropIndicator
+                          isVisible={
+                            shouldShowDropIndicator?.(column.id, index + 1) ||
+                            false
+                          }
+                        />
+                      </div>
+                    ))}
+                </>
+              ) : (
                 <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
                   No hay tarjetas
                 </div>
-              </>
-            )}
+              )}
+            </SortableContext>
 
             {/* Botón que se mueve junto con las tarjetas inicialmente */}
             <div className="pt-3 sticky bottom-0 bg-gray-50">
@@ -374,7 +186,7 @@ export function ColumnCard({
                 size="sm"
                 className="w-full text-gray-600 border-dashed hover:bg-gray-50"
                 disabled={isLoading}
-                onClick={() => setShowCreateCardDialog(true)}
+                onClick={handleOpenCreateCardDialog}
               >
                 + Agregar tarjeta
               </Button>
@@ -384,7 +196,7 @@ export function ColumnCard({
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <Dialog open={showDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>¿Eliminar columna?</DialogTitle>
@@ -398,7 +210,7 @@ export function ColumnCard({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
+              onClick={handleCloseDeleteDialog}
               disabled={isDeleting}
             >
               Cancelar
@@ -417,7 +229,7 @@ export function ColumnCard({
       {/* Create Card Dialog */}
       <CardFormDialog
         isOpen={showCreateCardDialog}
-        onClose={() => setShowCreateCardDialog(false)}
+        onClose={handleCloseCreateCardDialog}
         onSubmit={handleCreateCard}
         columnId={column.id}
         isLoading={isLoading}
@@ -427,7 +239,7 @@ export function ColumnCard({
       {editingCard && (
         <CardDetailModal
           isOpen={true}
-          onClose={() => setEditingCard(null)}
+          onClose={handleCloseEditCard}
           card={editingCard}
           onSave={handleEditCard}
           onDelete={() => handleDeleteRequest(editingCard.id)}
