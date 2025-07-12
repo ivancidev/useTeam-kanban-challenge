@@ -11,12 +11,10 @@ export class Column {
   createdAt: Date;
   updatedAt: Date;
 
-  // Método para calcular el número total de tarjetas
   get totalCards(): number {
     return this.cards?.length || 0;
   }
 
-  // Método estático para transformar datos de Prisma a una instancia de Column
   static fromPrisma(data: any): Column {
     const column = new Column();
     Object.assign(column, data);

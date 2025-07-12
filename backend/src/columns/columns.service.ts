@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { KanbanGateway } from '../kanban/kanban.gateway';
 import { Column } from './entities/column.entity';
 
 @Injectable()
 export class ColumnsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private kanbanGateway: KanbanGateway,
+  ) {}
 
   async create(createColumnDto: CreateColumnDto): Promise<Column> {
     // Si no se especifica un orden se obtiene el siguiente número disponible
@@ -32,7 +36,12 @@ export class ColumnsService {
     });
 
     // Transformamos la respuesta de Prisma a nuestra entidad
-    return Column.fromPrisma(columnData);
+    const column = Column.fromPrisma(columnData);
+
+    // Emitir evento WebSocket
+    this.kanbanGateway.broadcastColumnCreated(createColumnDto.boardId, column);
+
+    return column;
   }
 
   async findAll(): Promise<Column[]> {
@@ -70,6 +79,12 @@ export class ColumnsService {
   }
 
   async update(id: string, updateColumnDto: UpdateColumnDto): Promise<Column> {
+    // Obtener la columna antes de actualizarla para saber el boardId
+    const existingColumn = await this.prisma.column.findUnique({
+      where: { id },
+      select: { boardId: true },
+    });
+
     const updatedColumn = await this.prisma.column.update({
       where: { id },
       data: updateColumnDto,
@@ -82,15 +97,35 @@ export class ColumnsService {
       },
     });
 
-    return Column.fromPrisma(updatedColumn);
+    const column = Column.fromPrisma(updatedColumn);
+
+    // Emitir evento WebSocket
+    if (existingColumn) {
+      this.kanbanGateway.broadcastColumnUpdated(existingColumn.boardId, column);
+    }
+
+    return column;
   }
 
   async remove(id: string): Promise<Column> {
+    // Obtener la columna antes de eliminarla para saber el boardId
+    const existingColumn = await this.prisma.column.findUnique({
+      where: { id },
+      select: { boardId: true },
+    });
+
     const deletedColumn = await this.prisma.column.delete({
       where: { id },
     });
 
-    return Column.fromPrisma(deletedColumn);
+    const column = Column.fromPrisma(deletedColumn);
+
+    // Emitir evento WebSocket
+    if (existingColumn) {
+      this.kanbanGateway.broadcastColumnDeleted(existingColumn.boardId, id);
+    }
+
+    return column;
   }
 
   async findByBoard(boardId: string): Promise<Column[]> {
