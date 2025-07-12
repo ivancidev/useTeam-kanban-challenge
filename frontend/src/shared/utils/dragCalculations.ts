@@ -99,7 +99,7 @@ export function calculateDropPosition(
 
   return {
     targetColumn,
-    insertAtIndex: visualInsertIndex, // Usar el índice visual para los indicadores
+    insertAtIndex: visualInsertIndex,
     newOrder,
   };
 }

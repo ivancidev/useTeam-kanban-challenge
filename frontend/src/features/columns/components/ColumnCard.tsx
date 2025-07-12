@@ -173,7 +173,7 @@ export function ColumnCard({
                     ))}
                 </>
               ) : (
-                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-10 text-gray-400 text-sm">
                   No hay tarjetas
                 </div>
               )}

@@ -1,4 +1,3 @@
-// Helpers para operaciones asíncronas y manejo de estado
 /**
  * Helper para manejar operaciones asíncronas con loading y error handling
  */
