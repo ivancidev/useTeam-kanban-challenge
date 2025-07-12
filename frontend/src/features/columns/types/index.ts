@@ -46,5 +46,29 @@ export interface ColumnFormDialogProps {
   isLoading?: boolean;
 }
 
-// Re-export Card type for Column relations
+export interface UseColumnCardProps {
+  column: Column;
+  index: number;
+  onEdit: (column: Column) => void;
+  onDelete: (columnId: string) => void | Promise<void>;
+  onColumnUpdate?: (column: Column) => void;
+  isLoading?: boolean;
+  shouldShowDropIndicator?: (columnId: string, index: number) => boolean;
+  dragState?: {
+    isDragging: boolean;
+    activeCardId?: string | null;
+    targetColumnId?: string | null;
+    insertPosition?: number | null;
+  };
+}
+
+export interface UseColumnFormDialogProps {
+  column?: Column;
+  onSubmit: (data: CreateColumnDto) => Promise<void>;
+  onEdit?: (data: UpdateColumnDto) => Promise<void>;
+  onClose: () => void;
+  isLoading?: boolean;
+}
+
+
 export type { Card } from "../../cards/types";
