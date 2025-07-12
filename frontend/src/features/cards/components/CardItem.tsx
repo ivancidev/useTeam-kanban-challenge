@@ -1,6 +1,7 @@
 "use client";
 
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CardItemProps } from "../types";
 import { CardDisplay } from "./CardDisplay";
 
@@ -14,28 +15,18 @@ export function CardItem({
   const {
     attributes,
     listeners,
-    setNodeRef: setDragRef,
+    setNodeRef,
     transform,
+    transition,
     isDragging,
-  } = useDraggable({
+  } = useSortable({
     id: card.id,
   });
 
-  const { isOver, setNodeRef: setDropRef } = useDroppable({
-    id: card.id,
-  });
-
-  // Combine both refs
-  const setNodeRef = (node: HTMLElement | null) => {
-    setDragRef(node);
-    setDropRef(node);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
 
   const handleClick = () => {
     if (onClick && !isLoading && !isDragging) {
@@ -49,6 +40,7 @@ export function CardItem({
       style={style}
       {...listeners}
       {...attributes}
+      {...attributes}
       onClick={handleClick}
     >
       <CardDisplay
@@ -61,7 +53,6 @@ export function CardItem({
           ${onClick ? "cursor-pointer" : "cursor-default"}
           ${isLoading ? "opacity-50" : ""}
           ${isDragging ? "opacity-30 scale-95" : ""}
-          ${isOver ? "border-blue-300 bg-blue-50" : ""}
         `}
       />
     </div>

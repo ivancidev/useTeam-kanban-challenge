@@ -2,15 +2,7 @@
 
 import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Card } from "../types";
-
-interface CardDisplayProps {
-  card: Card;
-  className?: string;
-  onEdit?: (card: Card) => void;
-  onDelete?: (cardId: string) => void;
-  showActions?: boolean;
-}
+import { CardDisplayProps } from "../types";
 
 export function CardDisplay({
   card,

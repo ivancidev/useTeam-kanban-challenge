@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useColumnFormDialog } from "../hooks";
 import { ColumnFormDialogProps } from "../types";
 
 export function ColumnFormDialog({
@@ -22,54 +22,31 @@ export function ColumnFormDialog({
   column,
   isLoading = false,
 }: ColumnFormDialogProps) {
-  const [name, setName] = useState(column?.name || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!name.trim()) return;
-
-    try {
-      setIsSubmitting(true);
-
-      if (column && onEdit) {
-        // Editing existing column
-        await onEdit({ name: name.trim() });
-      } else {
-        // Creating new column
-        await onSubmit({
-          name: name.trim(),
-        });
-      }
-
-      handleClose();
-    } catch (error) {
-      console.error("Failed to submit column form:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleClose = () => {
-    setName(column?.name || "");
-    onClose();
-  };
-
-  const isFormValid = name.trim().length > 0;
+  // Usar el hook personalizado para manejar toda la lógica del formulario
+  const {
+    name,
+    isFormValid,
+    isOperationInProgress,
+    handleSubmit,
+    handleClose,
+    handleNameChange,
+    dialogTitle,
+    dialogDescription,
+    submitButtonText,
+  } = useColumnFormDialog({
+    column,
+    onSubmit,
+    onEdit,
+    onClose,
+    isLoading,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {column ? "Editar Columna" : "Nueva Columna"}
-          </DialogTitle>
-          <DialogDescription>
-            {column
-              ? "Modifica el nombre de la columna."
-              : "Crea una nueva columna para organizar tus tareas."}
-          </DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -81,11 +58,11 @@ export function ColumnFormDialog({
               <Input
                 id="name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
                 placeholder="Nombre de la columna"
                 className="col-span-3"
                 maxLength={100}
-                disabled={isSubmitting || isLoading}
+                disabled={isOperationInProgress}
                 autoFocus
               />
             </div>
@@ -96,15 +73,15 @@ export function ColumnFormDialog({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting || isLoading}
+              disabled={isOperationInProgress}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={!isFormValid || isSubmitting || isLoading}
+              disabled={!isFormValid || isOperationInProgress}
             >
-              {isSubmitting ? "Guardando..." : column ? "Actualizar" : "Crear"}
+              {submitButtonText}
             </Button>
           </DialogFooter>
         </form>

@@ -1,20 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { boardsApi } from "../services/api";
 import { columnsApi } from "../../columns/services/api";
 import { cardsApi } from "../../cards/services/api";
 import { useNotifications } from "../../../shared/hooks/useNotifications";
+import { useRealtimeSync } from "../../../shared/hooks/useRealtimeSync";
+import { useBoardRealtimeHandlers } from "./useBoardRealtimeHandlers";
+import {
+  createAsyncHandler,
+  createOptimisticHandler,
+  updateColumnsWithCard,
+  rollbackCardMove,
+  findCardInColumns,
+  isCardMovementRequired,
+  updateColumnOrder,
+  rollbackColumnOrder,
+  isColumnMovementRequired,
+} from "../helpers";
 import type { Board } from "../types";
+import type { MoveCardDto } from "../../cards/types";
 import type {
   Column,
   CreateColumnDto,
   UpdateColumnDto,
 } from "../../columns/types";
-import type {
-  Card,
-  MoveCardDto,
-} from "../../cards/types";
 
 export function useBoard() {
   const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
@@ -23,254 +33,161 @@ export function useBoard() {
   const [error, setError] = useState<string | null>(null);
   const { notifySuccess, notifyError } = useNotifications();
 
-  const loadBoard = async () => {
+  // Crear handlers reutilizables
+  const asyncHandler = createAsyncHandler(
+    setIsLoading,
+    setError,
+    notifySuccess,
+    notifyError
+  );
+
+  const loadBoard = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Get or create default board
+      // Obtener un tablero predeterminado
       const board = await boardsApi.getDefaultBoard();
       setCurrentBoard(board);
 
-      // Load columns for this board
       const boardColumns = await columnsApi.getColumns(board.id);
       setColumns(boardColumns);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load board";
-      setError(errorMessage);
-      console.error("Error loading board:", err);
+      const message =
+        err instanceof Error ? err.message : "Error al cargar el tablero";
+      setError(message);
+      console.error("Error cargando el tablero:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const createColumn = async (data: CreateColumnDto) => {
-    if (!currentBoard) return;
+  const createColumn = useCallback(
+    async (data: CreateColumnDto) => {
+      if (!currentBoard) return;
 
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Add boardId to the data
       const columnData = { ...data, boardId: currentBoard.id };
-      const newColumn = await columnsApi.createColumn(columnData);
 
-      // Add to local state
-      setColumns((prev) => [...prev, newColumn]);
-      notifySuccess("Columna creada exitosamente");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to create column";
-      setError(errorMessage);
-      notifyError("Error al crear la columna");
-      console.error("Error creating column:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const editColumn = async (id: string, data: UpdateColumnDto) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const updatedColumn = await columnsApi.updateColumn(id, data);
-      setColumns((prev) =>
-        prev.map((col) => (col.id === id ? updatedColumn : col))
+      await asyncHandler(
+        () => columnsApi.createColumn(columnData),
+        "Columna creada exitosamente",
+        "Error al crear la columna"
       );
-      notifySuccess("Columna actualizada exitosamente");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to update column";
-      setError(errorMessage);
-      notifyError("Error al actualizar la columna");
-      console.error("Error updating column:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [currentBoard, asyncHandler]
+  );
 
-  const deleteColumn = async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const editColumn = useCallback(
+    async (id: string, data: UpdateColumnDto) => {
+      await asyncHandler(
+        () => columnsApi.updateColumn(id, data),
+        "Columna actualizada exitosamente",
+        "Error al actualizar la columna"
+      );
+    },
+    [asyncHandler]
+  );
 
-      await columnsApi.deleteColumn(id);
-      // Remove from local state
-      setColumns((prev) => prev.filter((col) => col.id !== id));
-      notifySuccess("Columna eliminada exitosamente");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete column";
-      setError(errorMessage);
-      notifyError("Error al eliminar la columna");
-      console.error("Error deleting column:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const deleteColumn = useCallback(
+    async (id: string) => {
+      await asyncHandler(
+        () => columnsApi.deleteColumn(id),
+        "Columna eliminada exitosamente",
+        "Error al eliminar la columna"
+      );
+    },
+    [asyncHandler]
+  );
 
   const clearError = () => {
     setError(null);
   };
 
-  const moveCard = async (
-    cardId: string,
-    targetColumnId: string,
-    newOrder: number
-  ) => {
-    // Find the current card and its position
-    let currentCard: Card | null = null;
-    let currentColumnId: string | null = null;
-    let currentOrder: number | null = null;
+  const moveCard = useCallback(
+    async (cardId: string, targetColumnId: string, newOrder: number) => {
+      // Encontrar la tarjeta actual usando el helper
+      const {
+        card: currentCard,
+        columnId: currentColumnId,
+        order: currentOrder,
+      } = findCardInColumns(columns, cardId);
 
-    for (const column of columns) {
-      const card = column.cards?.find((c) => c.id === cardId);
-      if (card) {
-        currentCard = card;
-        currentColumnId = column.id;
-        currentOrder = card.order;
-        break;
+      if (!currentCard) {
+        console.error("Card not found:", cardId);
+        return;
       }
-    }
 
-    if (!currentCard) {
-      console.error("Card not found:", cardId);
-      return;
-    }
+      // Verificar si realmente es un movimiento usando el helper
+      if (
+        !isCardMovementRequired(
+          currentColumnId,
+          targetColumnId,
+          currentOrder,
+          newOrder
+        )
+      ) {
+        return;
+      }
 
-    // Check if this is actually a move (different column or different order)
-    const isSameColumn = currentColumnId === targetColumnId;
-    const isSameOrder = Math.abs((currentOrder || 0) - newOrder) < 0.001; // Use small epsilon for decimal comparison
-
-    if (isSameColumn && isSameOrder) {
-      return; // No notification, no API call
-    }
-
-    console.log(
-      "Moving card:",
-      cardId,
-      "from column:",
-      currentColumnId,
-      "order:",
-      currentOrder,
-      "to column:",
-      targetColumnId,
-      "order:",
-      newOrder
-    );
-
-    // OPTIMISTIC UPDATE: Update UI immediately for responsive feel
-    const optimisticCard = {
-      ...currentCard,
-      columnId: targetColumnId,
-      order: newOrder,
-    };
-
-    setColumns((prevColumns) => {
-      return prevColumns.map((column) => {
-        if (column.id === targetColumnId) {
-          // Add or update card in target column
-          const cardExists = column.cards?.some((card) => card.id === cardId);
-          if (!cardExists) {
-            return {
-              ...column,
-              cards: [...(column.cards || []), optimisticCard].sort(
-                (a, b) => a.order - b.order
-              ),
-            };
-          } else {
-            return {
-              ...column,
-              cards: (column.cards || [])
-                .map((card) => (card.id === cardId ? optimisticCard : card))
-                .sort((a, b) => a.order - b.order),
-            };
-          }
-        } else {
-          // Remove card from other columns
-          return {
-            ...column,
-            cards: (column.cards || []).filter((card) => card.id !== cardId),
-          };
-        }
-      });
-    });
-
-    // Now make the API call in the background
-    try {
-      const moveData: MoveCardDto = {
+      const optimisticCard = {
+        ...currentCard,
         columnId: targetColumnId,
         order: newOrder,
       };
 
-      const movedCard = await cardsApi.moveCard(cardId, moveData);
-      console.log("Card moved successfully on backend:", movedCard);
+      // Crear handler optimista
+      const optimisticHandler = createOptimisticHandler(
+        setError,
+        notifySuccess,
+        notifyError
+      );
 
-      // Update with the actual server response (in case of any server-side changes)
-      setColumns((prevColumns) => {
-        return prevColumns.map((column) => {
-          if (column.id === targetColumnId) {
-            return {
-              ...column,
-              cards: (column.cards || [])
-                .map((card) => (card.id === cardId ? movedCard : card))
-                .sort((a, b) => a.order - b.order),
-            };
-          }
-          return column;
-        });
-      });
+      // Función para la actualización optimista
+      const optimisticUpdate = () => {
+        setColumns((prevColumns) =>
+          updateColumnsWithCard(
+            prevColumns,
+            cardId,
+            targetColumnId,
+            optimisticCard
+          )
+        );
+      };
 
+      // Función para el rollback
+      const rollback = () => {
+        setColumns((prevColumns) =>
+          rollbackCardMove(
+            prevColumns,
+            cardId,
+            currentColumnId,
+            targetColumnId,
+            currentCard
+          )
+        );
+      };
 
-      if (!isSameColumn) {
-        notifySuccess("Tarjeta movida exitosamente");
-      }
-    } catch (err) {
-      // ROLLBACK: Revert optimistic update on error
-      console.error("Error moving card, rolling back:", err);
+      // Llamada a la API
+      const apiCall = async () => {
+        const moveData: MoveCardDto = {
+          columnId: targetColumnId,
+          order: newOrder,
+        };
+        return await cardsApi.moveCard(cardId, moveData);
+      };
 
-      setColumns((prevColumns) => {
-        return prevColumns.map((column) => {
-          if (column.id === currentColumnId) {
-            const cardExists = column.cards?.some((card) => card.id === cardId);
-            if (!cardExists) {
-              return {
-                ...column,
-                cards: [...(column.cards || []), currentCard].sort(
-                  (a, b) => a.order - b.order
-                ),
-              };
-            } else {
-              return {
-                ...column,
-                cards: (column.cards || [])
-                  .map((card) => (card.id === cardId ? currentCard : card))
-                  .sort((a, b) => a.order - b.order),
-              };
-            }
-          } else if (column.id === targetColumnId) {
-            // Remove card from target column where it was optimistically placed
-            return {
-              ...column,
-              cards: (column.cards || []).filter((card) => card.id !== cardId),
-            };
-          }
-          return column;
-        });
-      });
+      const isSameColumn = currentColumnId === targetColumnId;
 
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to move card";
-      setError(errorMessage);
-      notifyError("Error al mover la tarjeta");
-      throw err;
-    }
-  };
+      await optimisticHandler(
+        optimisticUpdate,
+        apiCall,
+        rollback,
+        !isSameColumn ? "Tarjeta movida exitosamente" : undefined,
+        "Error al mover la tarjeta"
+      );
+    },
+    [columns, notifySuccess, notifyError]
+  );
 
   const updateColumnState = (updatedColumn: Column) => {
     setColumns((prevColumns) =>
@@ -280,61 +197,78 @@ export function useBoard() {
     );
   };
 
-  const moveColumn = async (columnId: string, newOrder: number) => {
-    const currentColumn = columns.find((col) => col.id === columnId);
-    if (!currentColumn) {
-      console.error("Column not found:", columnId);
-      return;
-    }
+  const moveColumn = useCallback(
+    async (columnId: string, newOrder: number) => {
+      const currentColumn = columns.find((col) => col.id === columnId);
+      if (!currentColumn) {
+        console.error("Column not found:", columnId);
+        return;
+      }
 
-    // Check if this is actually a move
-    if (Math.abs(currentColumn.order - newOrder) < 0.001) {
-      return;
-    }
-    // OPTIMISTIC UPDATE: Update UI immediately
-    const optimisticColumn = { ...currentColumn, order: newOrder };
+      // Verificar si realmente es un movimiento
+      if (!isColumnMovementRequired(currentColumn.order, newOrder)) {
+        return;
+      }
 
-    setColumns((prevColumns) => {
-      return prevColumns
-        .map((col) => (col.id === columnId ? optimisticColumn : col))
-        .sort((a, b) => a.order - b.order);
-    });
+      const optimisticColumn = { ...currentColumn, order: newOrder };
 
-    try {
-      // Make API call to update column order
-      const updatedColumn = await columnsApi.updateColumn(columnId, {
-        order: newOrder,
-      });
-
-      // Update with server response
-      setColumns((prevColumns) =>
-        prevColumns
-          .map((col) => (col.id === columnId ? updatedColumn : col))
-          .sort((a, b) => a.order - b.order)
+      // Crear handler optimista
+      const optimisticHandler = createOptimisticHandler(
+        setError,
+        notifySuccess,
+        notifyError
       );
 
-      notifySuccess("Columna reordenada exitosamente");
-    } catch (err) {
-      // ROLLBACK: Revert optimistic update on error
-      console.error("Error moving column, rolling back:", err);
+      // Función para la actualización optimista
+      const optimisticUpdate = () => {
+        setColumns((prevColumns) =>
+          updateColumnOrder(prevColumns, columnId, optimisticColumn)
+        );
+      };
 
-      setColumns((prevColumns) =>
-        prevColumns
-          .map((col) => (col.id === columnId ? currentColumn : col))
-          .sort((a, b) => a.order - b.order)
+      // Función para el rollback
+      const rollback = () => {
+        setColumns((prevColumns) =>
+          rollbackColumnOrder(prevColumns, columnId, currentColumn)
+        );
+      };
+
+      // Llamada a la API
+      const apiCall = async () => {
+        return await columnsApi.updateColumn(columnId, {
+          order: newOrder,
+        });
+      };
+
+      await optimisticHandler(
+        optimisticUpdate,
+        apiCall,
+        rollback,
+        "Columna reordenada exitosamente",
+        "Error al reordenar la columna"
       );
+    },
+    [columns, notifySuccess, notifyError]
+  );
 
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to move column";
-      setError(errorMessage);
-      notifyError("Error al reordenar la columna");
-      throw err;
-    }
-  };
+  // Usar el hook de manejadores en tiempo real
+  const realtimeHandlers = useBoardRealtimeHandlers(setColumns);
+
+  // Configurar sincronización en tiempo real
+  const realtimeSync = useRealtimeSync({
+    boardId: currentBoard?.id || "",
+    onColumnCreated: realtimeHandlers.handleRealtimeColumnCreated,
+    onColumnUpdated: realtimeHandlers.handleRealtimeColumnUpdated,
+    onColumnDeleted: realtimeHandlers.handleRealtimeColumnDeleted,
+    onCardCreated: realtimeHandlers.handleRealtimeCardCreated,
+    onCardUpdated: realtimeHandlers.handleRealtimeCardUpdated,
+    onCardMoved: realtimeHandlers.handleRealtimeCardMoved,
+    onCardDeleted: realtimeHandlers.handleRealtimeCardDeleted,
+  });
 
   useEffect(() => {
     loadBoard();
-  }, []);
+  }, [loadBoard]);
 
   return {
     currentBoard,
@@ -349,5 +283,11 @@ export function useBoard() {
     moveColumn,
     updateColumnState,
     clearError,
+    realtime: {
+      isConnected: realtimeSync.isConnected,
+      isReconnecting: realtimeSync.isReconnecting,
+      connectedUsers: realtimeSync.connectedUsers,
+      lastUpdate: realtimeSync.lastUpdate,
+    },
   };
 }

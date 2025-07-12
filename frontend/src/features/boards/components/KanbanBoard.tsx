@@ -1,72 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBoard } from "../hooks/useBoard";
 import { ColumnCard } from "../../columns/components/ColumnCard";
 import { ColumnFormDialog } from "../../columns/components/ColumnFormDialog";
 import { DragDropProvider } from "@/shared/components/DragDropProvider";
-import { useDragStore } from "@/shared/stores/dragStore";
-import type {
-  Column,
-  CreateColumnDto,
-  UpdateColumnDto,
-} from "../../columns/types";
+import { ConnectionIndicator } from "@/shared/components/ConnectionIndicator";
+import { useKanbanBoardLogic } from "../hooks";
 
 export function KanbanBoard() {
   const {
     columns,
     isLoading,
     error,
-    createColumn,
-    editColumn,
-    deleteColumn,
+    showCreateDialog,
+    editingColumn,
     loadBoard,
-    moveCard,
     moveColumn,
-    updateColumnState,
-  } = useBoard();
-
-  const dragStore = useDragStore();
-
-  const shouldShowDropIndicator = (columnId: string, position: number) => {
-    return (
-      dragStore.isDragging &&
-      dragStore.targetColumnId === columnId &&
-      dragStore.insertPosition === position
-    );
-  };
-
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingColumn, setEditingColumn] = useState<Column | null>(null);
-
-  const handleCreateColumn = async (data: CreateColumnDto) => {
-    await createColumn(data);
-    setShowCreateDialog(false);
-  };
-
-  const handleEditColumn = async (data: UpdateColumnDto) => {
-    if (!editingColumn) return;
-    await editColumn(editingColumn.id, data);
-    setEditingColumn(null);
-  };
-
-  const handleDeleteColumn = async (columnId: string) => {
-    await deleteColumn(columnId);
-  };
-
-  const handleMoveCard = async (
-    cardId: string,
-    targetColumnId: string,
-    newOrder: number
-  ) => {
-    await moveCard(cardId, targetColumnId, newOrder);
-  };
-
-  const handleColumnUpdate = (updatedColumn: Column) => {
-    updateColumnState(updatedColumn);
-  };
+    shouldShowDropIndicator,
+    handleCreateColumn,
+    handleEditColumn,
+    handleDeleteColumn,
+    handleColumnUpdate,
+    handleMoveCard,
+    openCreateDialog,
+    closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
+    handleDragPositionChange,
+    dragState,
+  } = useKanbanBoardLogic();
 
   if (error) {
     return (
@@ -86,28 +49,34 @@ export function KanbanBoard() {
       columns={columns}
       onMoveCard={handleMoveCard}
       onMoveColumn={moveColumn}
-      onDragPositionChange={(state) => {
-        dragStore.setDragState(state);
-      }}
+      onDragPositionChange={handleDragPositionChange}
     >
       <div className="p-4">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tablero Kanban</h1>
-            <p className="text-gray-600 mt-1">
-              Gestiona tus tareas de forma visual
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Tablero Kanban
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Gestiona tus tareas de forma visual
+              </p>
+            </div>
+
+            {/* Indicador de conexión en tiempo real */}
+            <ConnectionIndicator showUsers={true} showLastUpdate={false} />
           </div>
 
           <Button
-            onClick={() => setShowCreateDialog(true)}
+            onClick={openCreateDialog}
             disabled={isLoading}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
             Nueva Columna
           </Button>
-        </div>{" "}
+        </div>
         {/* Columns Container */}
         <div className="relative">
           {/* Scroll Indicators */}
@@ -131,7 +100,6 @@ export function KanbanBoard() {
                   ))}
                 </>
               ) : columns.length > 0 ? (
-                // Columns with drag and drop
                 columns
                   .sort((a, b) => a.order - b.order)
                   .map((column, index) => (
@@ -139,17 +107,12 @@ export function KanbanBoard() {
                       key={column.id}
                       column={column}
                       index={index}
-                      onEdit={setEditingColumn}
+                      onEdit={openEditDialog}
                       onDelete={handleDeleteColumn}
                       onColumnUpdate={handleColumnUpdate}
                       isLoading={isLoading}
                       shouldShowDropIndicator={shouldShowDropIndicator}
-                      dragState={{
-                        isDragging: dragStore.isDragging,
-                        activeCardId: dragStore.activeCardId,
-                        targetColumnId: dragStore.targetColumnId,
-                        insertPosition: dragStore.insertPosition,
-                      }}
+                      dragState={dragState}
                     />
                   ))
               ) : (
@@ -165,10 +128,7 @@ export function KanbanBoard() {
                       Comienza creando tu primera columna para organizar las
                       tareas
                     </p>
-                    <Button
-                      onClick={() => setShowCreateDialog(true)}
-                      disabled={isLoading}
-                    >
+                    <Button onClick={openCreateDialog} disabled={isLoading}>
                       Crear primera columna
                     </Button>
                   </div>
@@ -179,14 +139,14 @@ export function KanbanBoard() {
         </div>
         <ColumnFormDialog
           isOpen={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
+          onClose={closeCreateDialog}
           onSubmit={handleCreateColumn}
           isLoading={isLoading}
         />
         {editingColumn && (
           <ColumnFormDialog
             isOpen={true}
-            onClose={() => setEditingColumn(null)}
+            onClose={closeEditDialog}
             onSubmit={handleCreateColumn}
             onEdit={handleEditColumn}
             column={editingColumn}

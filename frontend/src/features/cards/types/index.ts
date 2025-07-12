@@ -53,3 +53,24 @@ export interface CardDetailModalProps {
   onDelete: () => void;
   columnName: string;
 }
+
+export interface CardDisplayProps {
+  card: Card;
+  className?: string;
+  onEdit?: (card: Card) => void;
+  onDelete?: (cardId: string) => void;
+  showActions?: boolean;
+}
+
+export interface UseCardFormDialogProps {
+  card?: Card;
+  columnId: string;
+  onSubmit: (data: CreateCardDto) => void;
+  onEdit?: (data: UpdateCardDto) => void;
+  onClose: () => void;
+  isLoading?: boolean;
+}
+
+export interface FormErrors {
+  title?: string;
+}

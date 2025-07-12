@@ -1,4 +1,4 @@
-import type { Column } from "../../features/columns/types";
+import type { Card, Column } from "../../features/columns/types";
 import { ReactNode } from "react";
 
 
@@ -31,4 +31,26 @@ export interface DraggableColumnWrapperProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd: () => void;
   children: ReactNode;
+}
+
+export interface ConnectionIndicatorProps {
+  className?: string;
+  showUsers?: boolean;
+  showLastUpdate?: boolean;
+}
+
+export interface UseRealtimeSyncProps {
+  boardId: string;
+  onColumnCreated: (column: Column) => void;
+  onColumnUpdated: (column: Column) => void;
+  onColumnDeleted: (columnId: string) => void;
+  onCardCreated: (card: Card) => void;
+  onCardUpdated: (card: Card) => void;
+  onCardMoved: (cardData: {
+    cardId: string;
+    targetColumnId: string;
+    newOrder: number;
+  }) => void;
+  onCardDeleted: (cardId: string) => void;
+  onBoardUpdated?: (data: { columns: Column[]; cards: Card[] }) => void;
 }
