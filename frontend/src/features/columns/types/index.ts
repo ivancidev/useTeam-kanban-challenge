@@ -23,7 +23,7 @@ export interface UpdateColumnDto {
 
 export interface ColumnCardProps {
   column: Column;
-  index: number; 
+  index: number;
   onEdit: (column: Column) => void;
   onDelete: (columnId: string) => void;
   onColumnUpdate?: (updatedColumn: Column) => void;
@@ -43,6 +43,7 @@ export interface ColumnFormDialogProps {
   onSubmit: (data: CreateColumnDto) => Promise<void>;
   onEdit?: (data: UpdateColumnDto) => Promise<void>;
   column?: Column;
+  columns?: Column[];
   isLoading?: boolean;
 }
 
@@ -64,11 +65,11 @@ export interface UseColumnCardProps {
 
 export interface UseColumnFormDialogProps {
   column?: Column;
+  columns?: Column[];
   onSubmit: (data: CreateColumnDto) => Promise<void>;
   onEdit?: (data: UpdateColumnDto) => Promise<void>;
   onClose: () => void;
   isLoading?: boolean;
 }
-
 
 export type { Card } from "../../cards/types";

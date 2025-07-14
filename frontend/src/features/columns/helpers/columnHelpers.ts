@@ -16,12 +16,33 @@ export function sanitizeColumnName(name: string): string {
 }
 
 /**
+ * Calcula el próximo order para una nueva columna
+ */
+export function getNextColumnOrder(columns: Column[]): number {
+  if (!columns || columns.length === 0) {
+    return 1;
+  }
+  const maxOrder = Math.max(...columns.map((col) => col.order));
+  return maxOrder + 1;
+}
+
+/**
  * Prepara los datos de la columna para envío
  */
-export function prepareColumnDataForSubmission(name: string): { name: string } {
-  return {
+export function prepareColumnDataForSubmission(
+  name: string,
+  columns?: Column[]
+): { name: string; order?: number } {
+  const data: { name: string; order?: number } = {
     name: sanitizeColumnName(name),
   };
+
+  // Solo agregar order si se proporcionan las columnas existentes (para nueva columna)
+  if (columns) {
+    data.order = getNextColumnOrder(columns);
+  }
+
+  return data;
 }
 
 /**
@@ -107,28 +128,4 @@ export function sortColumnCards(column: Column): Column {
  */
 export function getNextCardOrder(column: Column): number {
   return (column.cards?.length || 0) + 1;
-}
-
-/**
- * Verifica si la columna está vacía
- */
-export function isColumnEmpty(column: Column): boolean {
-  return !column.cards || column.cards.length === 0;
-}
-
-/**
- * Cuenta las tarjetas en una columna
- */
-export function getCardCount(column: Column): number {
-  return column.cards?.length || 0;
-}
-
-/**
- * Busca una tarjeta en una columna por ID
- */
-export function findCardInColumn(
-  column: Column,
-  cardId: string
-): Card | undefined {
-  return column.cards?.find((card) => card.id === cardId);
 }

@@ -38,14 +38,12 @@ interface RealtimeCallbacks {
 type RealtimeStore = RealtimeState & RealtimeActions;
 
 export const useRealtimeStore = create<RealtimeStore>((set, get) => ({
-  // Estado inicial
   socket: null,
   isConnected: false,
   connectedUsers: 0,
   lastUpdate: null,
   isReconnecting: false,
 
-  // Conectar al servidor WebSocket
   connect: () => {
     const { socket } = get();
 

@@ -20,9 +20,9 @@ export function ColumnFormDialog({
   onSubmit,
   onEdit,
   column,
+  columns,
   isLoading = false,
 }: ColumnFormDialogProps) {
-  // Usar el hook personalizado para manejar toda la lógica del formulario
   const {
     name,
     isFormValid,
@@ -35,6 +35,7 @@ export function ColumnFormDialog({
     submitButtonText,
   } = useColumnFormDialog({
     column,
+    columns,
     onSubmit,
     onEdit,
     onClose,
