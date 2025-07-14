@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useNotifications } from "../../../shared/hooks/useNotifications";
+import { isValidCardTitle, sanitizeCardData } from "../helpers";
 import {
-  isValidCardTitle,
-  validateCardForm,
-  prepareCardDataForSubmission,
-} from "../helpers";
-import { FormErrors, UseCardFormDialogProps } from "../types";
-
+  FormErrors,
+  UseCardFormDialogProps,
+  CardPriority,
+  CardType,
+} from "../types";
 
 export function useCardFormDialog({
   card,
@@ -20,13 +20,25 @@ export function useCardFormDialog({
 }: UseCardFormDialogProps) {
   const [title, setTitle] = useState(card?.title || "");
   const [description, setDescription] = useState(card?.description || "");
+  const [comments, setComments] = useState(card?.comments || "");
+  const [dueDate, setDueDate] = useState(card?.dueDate || "");
+  const [priority, setPriority] = useState<CardPriority>(
+    card?.priority || CardPriority.MEDIUM
+  );
+  const [type, setType] = useState<CardType>(card?.type || CardType.TASK);
+  const [tags, setTags] = useState<string[]>(card?.tags || []);
   const [errors, setErrors] = useState<FormErrors>({});
   const { notifyError } = useNotifications();
 
   const isEditing = !!card;
 
   const validateForm = (): boolean => {
-    const newErrors = validateCardForm(title);
+    const newErrors: FormErrors = {};
+
+    if (!isValidCardTitle(title)) {
+      newErrors.title = "El título es requerido";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -34,12 +46,22 @@ export function useCardFormDialog({
   const resetForm = () => {
     setTitle("");
     setDescription("");
+    setComments("");
+    setDueDate("");
+    setPriority(CardPriority.MEDIUM);
+    setType(CardType.TASK);
+    setTags([]);
     setErrors({});
   };
 
   const resetToOriginal = () => {
     setTitle(card?.title || "");
     setDescription(card?.description || "");
+    setComments(card?.comments || "");
+    setDueDate(card?.dueDate || "");
+    setPriority(card?.priority || CardPriority.MEDIUM);
+    setType(card?.type || CardType.TASK);
+    setTags(card?.tags || []);
     setErrors({});
   };
 
@@ -52,17 +74,32 @@ export function useCardFormDialog({
     }
 
     try {
-      const preparedData = prepareCardDataForSubmission(title, description);
+      const sanitizedData = sanitizeCardData(
+        title,
+        description,
+        comments,
+        tags
+      );
 
       if (isEditing && onEdit) {
         onEdit({
-          title: preparedData.title,
-          description: preparedData.description,
+          title: sanitizedData.title,
+          description: sanitizedData.description,
+          comments: sanitizedData.comments,
+          dueDate: dueDate || undefined,
+          priority,
+          type,
+          tags: sanitizedData.tags,
         });
       } else {
         onSubmit({
-          title: preparedData.title,
-          description: preparedData.description,
+          title: sanitizedData.title,
+          description: sanitizedData.description,
+          comments: sanitizedData.comments,
+          dueDate: dueDate || undefined,
+          priority,
+          type,
+          tags: sanitizedData.tags,
           columnId,
         });
       }
@@ -94,19 +131,26 @@ export function useCardFormDialog({
   return {
     title,
     description,
+    comments,
+    dueDate,
+    priority,
+    type,
+    tags,
     errors,
     isEditing,
     isLoading,
-
     setTitle: handleTitleChange,
     setDescription,
-
+    setComments,
+    setDueDate,
+    setPriority,
+    setType,
+    setTags,
     handleSubmit,
     handleClose,
     validateForm,
     resetForm,
     resetToOriginal,
-
     hasErrors: Object.keys(errors).length > 0,
     isFormValid: isValidCardTitle(title),
   };

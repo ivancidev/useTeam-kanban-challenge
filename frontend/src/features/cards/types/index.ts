@@ -1,7 +1,28 @@
+export enum CardPriority {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  URGENT = "URGENT",
+}
+
+export enum CardType {
+  TASK = "TASK",
+  BUG = "BUG",
+  ENHANCEMENT = "ENHANCEMENT",
+  FEATURE = "FEATURE",
+  DOCUMENTATION = "DOCUMENTATION",
+  RESEARCH = "RESEARCH",
+}
+
 export interface Card {
   id: string;
   title: string;
   description?: string;
+  comments?: string;
+  dueDate?: string;
+  priority: CardPriority;
+  type: CardType;
+  tags: string[];
   order: number;
   columnId: string;
   createdAt: Date;
@@ -11,6 +32,11 @@ export interface Card {
 export interface CreateCardDto {
   title: string;
   description?: string;
+  comments?: string;
+  dueDate?: string;
+  priority?: CardPriority;
+  type?: CardType;
+  tags?: string[];
   order?: number;
   columnId: string;
 }
@@ -18,6 +44,11 @@ export interface CreateCardDto {
 export interface UpdateCardDto {
   title?: string;
   description?: string;
+  comments?: string;
+  dueDate?: string;
+  priority?: CardPriority;
+  type?: CardType;
+  tags?: string[];
   order?: number;
 }
 
