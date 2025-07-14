@@ -7,6 +7,7 @@ import { UseColumnFormDialogProps } from "../types";
 
 export function useColumnFormDialog({
   column,
+  columns,
   onSubmit,
   onEdit,
   onClose,
@@ -24,7 +25,7 @@ export function useColumnFormDialog({
     try {
       setIsSubmitting(true);
 
-      const columnData = prepareColumnDataForSubmission(name);
+      const columnData = prepareColumnDataForSubmission(name, columns);
 
       if (column && onEdit) {
         // Editando columna existente
