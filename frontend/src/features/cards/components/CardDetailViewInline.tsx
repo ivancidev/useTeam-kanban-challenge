@@ -121,19 +121,45 @@ export function CardDetailViewInline({
           <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
+                <div className="flex-1 pr-16">
                   {/* Título editable */}
                   {isEditing ? (
-                    <Input
+                    <Textarea
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="text-xl font-bold mb-2 h-auto py-2 border-0 bg-transparent focus:bg-white focus:border-gray-300"
+                      className="text-xl font-bold mb-2 resize-none min-h-[3rem] max-h-[8rem] border-0 bg-transparent focus:bg-white focus:border-gray-300 leading-tight w-full"
+                      style={{
+                        lineHeight: "1.3",
+                        overflow: "hidden",
+                        scrollbarWidth: "thin",
+                        maxWidth: "100%",
+                        wordWrap: "break-word",
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "break-word",
+                      }}
                       placeholder="Título de la tarjeta"
                       disabled={isSaving}
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = "auto";
+                        const newHeight = Math.max(
+                          48,
+                          Math.min(target.scrollHeight, 128)
+                        ); // min 3rem, max 8rem
+                        target.style.height = newHeight + "px";
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          // Podrías agregar lógica para guardar o cambiar el foco aquí
+                        }
+                      }}
                     />
                   ) : (
                     <DialogTitle
-                      className="text-xl font-bold text-gray-900 mb-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                      className="text-xl font-bold text-gray-900 mb-2 cursor-pointer hover:bg-gray-50 p-2 rounded break-words"
                       onClick={startEditing}
                     >
                       {card.title}

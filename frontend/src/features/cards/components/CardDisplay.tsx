@@ -84,7 +84,17 @@ export function CardDisplay({
       )}
 
       {/* Título */}
-      <h4 className="font-semibold text-gray-900 text-sm leading-tight mb-2 truncate pr-16">
+      <h4
+        className={`font-semibold text-gray-900 text-sm leading-tight mb-2 overflow-hidden break-words
+                      ${onEdit || onDelete ? "pr-20" : "pr-2"}`}
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 1,
+          WebkitBoxOrient: "vertical",
+          lineHeight: "1.2",
+          maxHeight: "1.2em", // 1 línea × 1.2 line-height
+        }}
+      >
         {card.title}
       </h4>
 
@@ -113,13 +123,19 @@ export function CardDisplay({
       {/* Indicadores de contenido adicional */}
       <div className="flex items-center gap-2 mt-auto">
         {cardInfo.hasDescription && (
-          <div className="bg-blue-500 text-white rounded-full p-1 shadow-sm">
-            <uiIcons.comment className="h-3 w-3" />
+          <div
+            className="bg-blue-500 text-white rounded-full p-1 shadow-sm"
+            title="Tiene descripción"
+          >
+            <uiIcons.description className="h-3 w-3" />
           </div>
         )}
         {cardInfo.hasComments && (
-          <div className="bg-purple-500 text-white rounded-full p-1 shadow-sm">
-            <uiIcons.message className="h-3 w-3" />
+          <div
+            className="bg-purple-500 text-white rounded-full p-1 shadow-sm"
+            title="Tiene comentarios"
+          >
+            <uiIcons.comment className="h-3 w-3" />
           </div>
         )}
       </div>

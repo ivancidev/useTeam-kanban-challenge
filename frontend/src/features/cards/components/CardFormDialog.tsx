@@ -109,13 +109,43 @@ export function CardFormDialog({
               <Label htmlFor="title">
                 Título <span className="text-red-500">*</span>
               </Label>
-              <Input
+              <Textarea
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ingresa el título de la tarjeta"
-                className={errors.title ? "border-red-500" : ""}
+                className={`resize-none min-h-[2.5rem] max-h-[8rem] leading-tight w-full ${
+                  errors.title ? "border-red-500" : ""
+                }`}
+                style={{
+                  lineHeight: "1.4",
+                  overflow: "hidden",
+                  scrollbarWidth: "thin",
+                  wordWrap: "break-word",
+                  wordBreak: "break-word",
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "break-word",
+                }}
                 disabled={isLoading}
+                rows={1}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  // Reset height to auto to get the correct scrollHeight
+                  target.style.height = "auto";
+                  // Set height based on content, with min and max constraints
+                  const newHeight = Math.max(
+                    40,
+                    Math.min(target.scrollHeight, 128)
+                  ); // min 2.5rem, max 8rem
+                  target.style.height = newHeight + "px";
+                }}
+                onKeyDown={(e) => {
+                  // Allow Shift+Enter for new lines, Enter alone could submit if needed
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    // Prevent default if you want Enter to submit the form
+                    // e.preventDefault();
+                  }
+                }}
               />
               {errors.title && (
                 <span className="text-sm text-red-500">{errors.title}</span>

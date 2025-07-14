@@ -20,6 +20,8 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiMessageSquare,
+  FiFileText,
+  FiMessageCircle,
 } from "react-icons/fi";
 
 import { MdDragIndicator, MdDashboard } from "react-icons/md";
@@ -55,6 +57,8 @@ export const uiIcons = {
   card: BsCardText,
   pin: BsPin,
   grid: FiGrid,
-  comment: FiMessageSquare,
+  description: FiFileText, // Icono para descripción - documento/texto
+  comment: FiMessageCircle, // Icono para comentarios - burbuja de mensaje
+  // Mantener estos para compatibilidad si se usan en otros lugares
   message: FiMessageSquare,
 } as const;
