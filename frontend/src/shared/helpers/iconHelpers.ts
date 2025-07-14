@@ -56,4 +56,5 @@ export const uiIcons = {
   pin: BsPin,
   grid: FiGrid,
   comment: FiMessageSquare,
+  message: FiMessageSquare,
 } as const;
