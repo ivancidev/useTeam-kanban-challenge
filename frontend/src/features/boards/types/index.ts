@@ -8,13 +8,5 @@ export interface Board {
   columns?: Column[];
 }
 
-export interface CreateBoardDto {
-  name: string;
-}
-
-export interface UpdateBoardDto {
-  name?: string;
-}
-
 // Re-export Column type for Board relations
 export type { Column } from "../../columns/types";
