@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useRealtimeStore } from "@/shared/stores/realtimeStore";
 import { useNotifications } from "@/shared/hooks/useNotifications";
+import { userActionTracker } from "@/shared/utils/userActionTracker";
 import type { Column } from "@/features/columns/types";
 import type { Card } from "@/features/cards/types";
 import { UseRealtimeSyncProps } from "../types";
@@ -32,9 +33,20 @@ export const useRealtimeSync = ({
 
   const { notifyInfo, notifySuccess } = useNotifications();
 
-  // Conectar y configurar listeners al montar
+  // Función para marcar la acción del usuario usando el rastreador global
+  const markUserAction = useCallback((actionType: string, entityId: string) => {
+    userActionTracker.markAction(actionType, entityId);
+  }, []);
+
+  // Función para verificar si se trata de una acción propia del usuario utilizando el rastreador global
+  const isUserOwnAction = useCallback(
+    (actionType: string, entityId: string) => {
+      return userActionTracker.isUserAction(actionType, entityId);
+    },
+    []
+  );
+
   useEffect(() => {
-    // Conectar al WebSocket
     connect();
 
     return () => {
@@ -52,42 +64,59 @@ export const useRealtimeSync = ({
       setupEventListeners({
         onColumnCreated: (column: Column) => {
           onColumnCreated(column);
-          notifyInfo(`Nueva columna creada: ${column.name}`);
+          // Solo mostrar notificación si NO es una acción propia
+          if (!isUserOwnAction("column-created", column.id)) {
+            notifyInfo(`Nueva columna creada: ${column.name}`);
+          }
         },
 
         onColumnUpdated: (column: Column) => {
           onColumnUpdated(column);
-          notifyInfo(`Columna actualizada: ${column.name}`);
+          if (!isUserOwnAction("column-updated", column.id)) {
+            notifyInfo(`Columna actualizada: ${column.name}`);
+          }
         },
 
         onColumnDeleted: (columnId: string) => {
           onColumnDeleted(columnId);
-          notifyInfo("Columna eliminada");
+          if (!isUserOwnAction("column-deleted", columnId)) {
+            notifyInfo("Columna eliminada");
+          }
         },
 
         onCardCreated: (card: Card) => {
           onCardCreated(card);
-          notifySuccess(`Nueva tarjeta: ${card.title}`);
+          if (!isUserOwnAction("card-created", card.id)) {
+            notifySuccess(`Nueva tarjeta: ${card.title}`);
+          }
         },
 
         onCardUpdated: (card: Card) => {
           onCardUpdated(card);
-          notifyInfo(`Tarjeta actualizada: ${card.title}`);
+          if (!isUserOwnAction("card-updated", card.id)) {
+            notifyInfo(`Tarjeta actualizada: ${card.title}`);
+          }
         },
 
         onCardMoved: (cardData) => {
           onCardMoved(cardData);
-          notifyInfo("Tarjeta movida");
+          if (!isUserOwnAction("card-moved", cardData.cardId)) {
+            notifyInfo("Tarjeta movida");
+          }
         },
 
         onCardDeleted: (cardId: string) => {
           onCardDeleted(cardId);
-          notifyInfo("Tarjeta eliminada");
+          if (!isUserOwnAction("card-deleted", cardId)) {
+            notifyInfo("Tarjeta eliminada");
+          }
         },
 
         onBoardUpdated: (data) => {
           onBoardUpdated?.(data);
-          notifyInfo("Tablero actualizado");
+          if (!isUserOwnAction("board-updated", boardId)) {
+            notifyInfo("Tablero actualizado");
+          }
         },
       });
     }
@@ -106,6 +135,7 @@ export const useRealtimeSync = ({
     onBoardUpdated,
     notifyInfo,
     notifySuccess,
+    isUserOwnAction,
   ]);
 
   // Limpiar listeners cuando cambie el boardId
@@ -116,13 +146,6 @@ export const useRealtimeSync = ({
       }
     };
   }, [boardId, leaveBoard]);
-
-  // Función para indicar que el usuario está realizando una acción
-  const markUserAction = useCallback(() => {
-    // Esto puede ser útil para evitar notificaciones de las propias acciones
-    // Por ahora solo registramos la acción
-    console.log("👤 User action performed");
-  }, []);
 
   return {
     isConnected,
