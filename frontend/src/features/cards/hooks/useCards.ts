@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cardsApi } from "../services/api";
 import { useNotifications } from "../../../shared/hooks/useNotifications";
+import { userActionTracker } from "../../../shared/utils/userActionTracker";
 import type { Card, CreateCardDto, UpdateCardDto, MoveCardDto } from "../types";
 
 export function useCards() {
@@ -16,6 +17,12 @@ export function useCards() {
       setError(null);
 
       const newCard = await cardsApi.createCard(data);
+
+      // Marcar la acción del usuario para evitar notificaciones duplicadas
+      if (newCard) {
+        userActionTracker.markAction("card-created", newCard.id);
+      }
+
       notifySuccess("Tarjeta creada exitosamente");
       return newCard;
     } catch (err) {
@@ -36,6 +43,9 @@ export function useCards() {
     try {
       setIsLoading(true);
       setError(null);
+
+      // Marcar la acción del usuario antes de la actualización
+      userActionTracker.markAction("card-updated", id);
 
       const updatedCard = await cardsApi.updateCard(id, data);
       notifySuccess("Tarjeta actualizada exitosamente");
@@ -59,6 +69,9 @@ export function useCards() {
       setIsLoading(true);
       setError(null);
 
+      // Marcar la acción del usuario antes del movimiento
+      userActionTracker.markAction("card-moved", id);
+
       const movedCard = await cardsApi.moveCard(id, data);
       notifySuccess("Tarjeta movida exitosamente");
       return movedCard;
@@ -77,6 +90,9 @@ export function useCards() {
     try {
       setIsLoading(true);
       setError(null);
+
+      // Marcar la acción del usuario antes de la eliminación
+      userActionTracker.markAction("card-deleted", id);
 
       await cardsApi.deleteCard(id);
       notifySuccess("Tarjeta eliminada exitosamente");

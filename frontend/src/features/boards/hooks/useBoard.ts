@@ -6,6 +6,7 @@ import { columnsApi } from "../../columns/services/api";
 import { cardsApi } from "../../cards/services/api";
 import { useNotifications } from "../../../shared/hooks/useNotifications";
 import { useRealtimeSync } from "../../../shared/hooks/useRealtimeSync";
+import { userActionTracker } from "../../../shared/utils/userActionTracker";
 import { useBoardRealtimeHandlers } from "./useBoardRealtimeHandlers";
 import {
   createAsyncHandler,
@@ -67,18 +68,32 @@ export function useBoard() {
       if (!currentBoard) return;
 
       const columnData = { ...data, boardId: currentBoard.id };
-
-      await asyncHandler(
-        () => columnsApi.createColumn(columnData),
-        "Columna creada exitosamente",
-        "Error al crear la columna"
-      );
+      
+      try {
+        const result = await asyncHandler(
+          () => columnsApi.createColumn(columnData),
+          "Columna creada exitosamente",
+          "Error al crear la columna"
+        );
+        
+        // Marcar la acción del usuario con el ID real de la columna creada
+        if (result) {
+          userActionTracker.markAction('column-created', result.id);
+        }
+        
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     [currentBoard, asyncHandler]
   );
 
   const editColumn = useCallback(
     async (id: string, data: UpdateColumnDto) => {
+      // Marcar la acción del usuario antes de realizar la actualización
+      userActionTracker.markAction('column-updated', id);
+      
       await asyncHandler(
         () => columnsApi.updateColumn(id, data),
         "Columna actualizada exitosamente",
@@ -90,6 +105,9 @@ export function useBoard() {
 
   const deleteColumn = useCallback(
     async (id: string) => {
+      // Marcar la acción del usuario antes de realizar la eliminación
+      userActionTracker.markAction('column-deleted', id);
+      
       await asyncHandler(
         () => columnsApi.deleteColumn(id),
         "Columna eliminada exitosamente",
@@ -233,7 +251,6 @@ export function useBoard() {
         );
       };
 
-      // Llamada a la API
       const apiCall = async () => {
         return await columnsApi.updateColumn(columnId, {
           order: newOrder,
