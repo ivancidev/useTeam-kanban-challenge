@@ -78,12 +78,23 @@ export const buttonColors = {
   },
 } as const;
 
-// Función para obtener color de columna de manera cíclica
-export const getColumnColor = (index: number) => {
+// Función para obtener color de columna estable basado en ID
+export const getColumnColorById = (columnId: string) => {
   const colorKeys = Object.keys(columnColors) as Array<
     keyof typeof columnColors
   >;
-  const colorKey = colorKeys[index % colorKeys.length];
+
+  // Crear un hash simple del ID para obtener un índice consistente
+  let hash = 0;
+  for (let i = 0; i < columnId.length; i++) {
+    const char = columnId.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convertir a 32-bit integer
+  }
+
+  // Usar el valor absoluto del hash para obtener un índice positivo
+  const index = Math.abs(hash) % colorKeys.length;
+  const colorKey = colorKeys[index];
   return columnColors[colorKey];
 };
 

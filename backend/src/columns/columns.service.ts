@@ -82,12 +82,22 @@ export class ColumnsService {
     // Obtener la columna antes de actualizarla para saber el boardId
     const existingColumn = await this.prisma.column.findUnique({
       where: { id },
-      select: { boardId: true },
+      select: { boardId: true, order: true },
     });
+
+    // Preparar datos para actualización, preservando order si no se especifica
+    const updateData: Partial<UpdateColumnDto> = {
+      name: updateColumnDto.name,
+    };
+
+    // Solo actualizar order si se especifica explícitamente
+    if (updateColumnDto.order !== undefined) {
+      updateData.order = updateColumnDto.order;
+    }
 
     const updatedColumn = await this.prisma.column.update({
       where: { id },
-      data: updateColumnDto,
+      data: updateData,
       include: {
         cards: {
           orderBy: {

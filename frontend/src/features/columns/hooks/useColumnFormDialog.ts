@@ -25,13 +25,12 @@ export function useColumnFormDialog({
     try {
       setIsSubmitting(true);
 
-      const columnData = prepareColumnDataForSubmission(name, columns);
-
       if (column && onEdit) {
-        // Editando columna existente
+        const columnData = prepareColumnDataForSubmission(name);
         await onEdit(columnData);
       } else {
-        // Creando nueva columna
+        // Creando nueva columna - incluir order basado en columnas existentes
+        const columnData = prepareColumnDataForSubmission(name, columns);
         await onSubmit(columnData);
       }
 
@@ -68,7 +67,6 @@ export function useColumnFormDialog({
     handleClose,
     handleNameChange,
 
-    // Textos dinámicos
     dialogTitle: column ? "Editar Columna" : "Nueva Columna",
     dialogDescription: column
       ? "Modifica el nombre de la columna."
