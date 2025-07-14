@@ -26,7 +26,7 @@ import {
   buttonAnimations,
 } from "@/shared/helpers/animationHelpers";
 import {
-  getColumnColor,
+  getColumnColorById,
   getButtonClasses,
 } from "@/shared/helpers/colorHelpers";
 
@@ -78,7 +78,7 @@ export function ColumnCard({
     dragState,
   });
 
-  const columnColor = getColumnColor(index);
+  const columnColor = getColumnColorById(column.id);
 
   return (
     <>
