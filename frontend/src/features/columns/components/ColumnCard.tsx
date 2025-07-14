@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { VirtualizedCardsList } from "../../cards/components/VirtualizedCardsList";
 import { CardFormDialog } from "../../cards/components/CardFormDialog";
-import { CardDetailModal } from "../../cards/components/CardDetailModal";
+import { CardViewEditContainer } from "../../cards/components/CardViewEditContainer";
 import { DropIndicator } from "../../cards/components/DropIndicator";
 import { useColumnCard } from "../hooks";
 import { ColumnCardProps } from "../types";
@@ -258,14 +258,13 @@ export function ColumnCard({
         isLoading={isLoading}
       />
 
-      {/* Edit Card Dialog - Usar CardDetailModal para edición completa */}
+      {/* Sistema completo de visualización y edición */}
       {editingCard && (
-        <CardDetailModal
+        <CardViewEditContainer
           isOpen={true}
           onClose={handleCloseEditCard}
           card={editingCard}
-          onSave={handleEditCard}
-          onDelete={() => handleDeleteRequest(editingCard.id)}
+          onUpdate={handleEditCard}
           columnName={column.name}
         />
       )}
