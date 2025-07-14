@@ -3,6 +3,7 @@ import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { KanbanGateway } from '../kanban/kanban.gateway';
+import { CardPriority, CardType } from './entities/card.entity';
 
 @Injectable()
 export class CardsService {
@@ -20,13 +21,18 @@ export class CardsService {
       }));
 
     const card = await this.prisma.card.create({
-      data: {
-        title: createCardDto.title,
-        description: createCardDto.description,
-        order: nextOrder,
-        columnId: createCardDto.columnId,
-      },
-    });
+  data: {
+    title: createCardDto.title,
+    description: createCardDto.description,
+    comments: createCardDto.comments,
+    dueDate: createCardDto.dueDate ? new Date(createCardDto.dueDate) : null,
+    priority: createCardDto.priority || 'MEDIUM',
+    type: createCardDto.type || 'TASK', 
+    tags: createCardDto.tags || [],
+    order: nextOrder,
+    columnId: createCardDto.columnId,
+  },
+});
 
     // Obtener el boardId de la columna para emitir el evento
     const column = await this.prisma.column.findUnique({
@@ -67,9 +73,17 @@ export class CardsService {
       },
     });
 
+    // Preparar datos de actualización
+    const updateData: any = { ...updateCardDto };
+
+    // Convertir dueDate si existe
+    if (updateCardDto.dueDate) {
+      updateData.dueDate = new Date(updateCardDto.dueDate);
+    }
+
     const updatedCard = await this.prisma.card.update({
       where: { id },
-      data: updateCardDto,
+      data: updateData,
     });
 
     // Emitir evento WebSocket

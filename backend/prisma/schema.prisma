@@ -33,12 +33,33 @@ model Column {
 }
 
 model Card {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
+  comments    String?
+  dueDate     DateTime?
+  priority    CardPriority @default(MEDIUM)
+  type        CardType     @default(TASK)
+  tags        String[]
   order       Int
-  columnId    String   @db.ObjectId
-  column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  columnId    String       @db.ObjectId
+  column      Column       @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum CardPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CardType {
+  TASK
+  BUG
+  ENHANCEMENT
+  FEATURE
+  DOCUMENTATION
+  RESEARCH
 }
