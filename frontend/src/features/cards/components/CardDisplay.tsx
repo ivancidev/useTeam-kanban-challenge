@@ -48,7 +48,6 @@ export function CardDisplay({
       outline-1 outline-gray-200/50
       ${className}
     `}
-      style={{ minHeight: `${cardInfo.estimatedHeight}px` }}
     >
       {/* Action buttons */}
       {(onEdit || onDelete) && (

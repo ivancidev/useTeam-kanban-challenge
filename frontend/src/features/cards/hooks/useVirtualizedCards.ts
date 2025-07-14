@@ -1,7 +1,11 @@
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { useRef, useMemo } from "react";
 import { Card } from "../types";
-import { VIRTUALIZATION_CONFIG } from "../helpers/virtualizationHelpers";
+import {
+  VIRTUALIZATION_CONFIG,
+  calculateCardHeight,
+  calculateCardMargin,
+} from "../helpers/virtualizationHelpers";
 
 interface UseVirtualizedCardsConfig {
   cards: Card[];
@@ -31,14 +35,21 @@ export function useVirtualizedCards({
     [enabled, cards.length, threshold]
   );
 
+  // Calcular alturas dinámicas para cada tarjeta
+  const cardHeights = useMemo(() => {
+    return cards.map(
+      (card) => calculateCardHeight(card) + calculateCardMargin(card)
+    );
+  }, [cards]);
+
   const virtualizer = useVirtualizer({
     count: cards.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => {
-      // Tamaño FIJO para todas las tarjetas (75px tarjeta + 16px margen)
+    estimateSize: (index) => {
+      // Usar altura dinámica para cada tarjeta
       return (
-        VIRTUALIZATION_CONFIG.FIXED_CARD_SIZE +
-        VIRTUALIZATION_CONFIG.CARD_MARGIN
+        cardHeights[index] ||
+        VIRTUALIZATION_CONFIG.BASE_CARD_SIZE + VIRTUALIZATION_CONFIG.CARD_MARGIN
       );
     },
     overscan,
@@ -48,12 +59,22 @@ export function useVirtualizedCards({
   const virtualItems = shouldVirtualize ? virtualizer.getVirtualItems() : [];
   const totalSize = shouldVirtualize ? virtualizer.getTotalSize() : 0;
 
+  // Calcular tamaño promedio para compatibilidad
+  const averageCardSize = useMemo(() => {
+    if (cardHeights.length === 0)
+      return (
+        VIRTUALIZATION_CONFIG.BASE_CARD_SIZE + VIRTUALIZATION_CONFIG.CARD_MARGIN
+      );
+    return (
+      cardHeights.reduce((sum, height) => sum + height, 0) / cardHeights.length
+    );
+  }, [cardHeights]);
+
   return {
     parentRef,
     virtualItems,
     totalSize,
     shouldVirtualize,
-    optimalCardSize:
-      VIRTUALIZATION_CONFIG.FIXED_CARD_SIZE + VIRTUALIZATION_CONFIG.CARD_MARGIN,
+    optimalCardSize: averageCardSize,
   };
 }

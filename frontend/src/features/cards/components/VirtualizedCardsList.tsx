@@ -8,6 +8,7 @@ import { useVirtualizedCards } from "../hooks/useVirtualizedCards";
 import {
   VIRTUALIZATION_CONFIG,
   calculateContainerHeight,
+  calculateCardMargin,
 } from "../helpers/virtualizationHelpers";
 
 interface VirtualizedCardsListProps {
@@ -64,6 +65,9 @@ export const VirtualizedCardsList = memo(function VirtualizedCardsList({
           const card = cards[virtualItem.index];
           if (!card) return null;
 
+          // Calcular margen dinámico para esta tarjeta específica
+          const dynamicMargin = calculateCardMargin(card);
+
           return (
             <div
               key={card.id}
@@ -71,9 +75,15 @@ export const VirtualizedCardsList = memo(function VirtualizedCardsList({
               className="absolute top-0 left-0 w-full isolate"
               style={{
                 transform: `translateY(${virtualItem.start}px)`,
+                height: `${virtualItem.size}px`,
               }}
             >
-              <div className="mb-3">
+              <div
+                className="relative w-full h-full"
+                style={{
+                  paddingBottom: `${dynamicMargin}px`, // Margen dinámico basado en contenido
+                }}
+              >
                 <CardItem
                   card={card}
                   onClick={onClick}
