@@ -123,35 +123,41 @@ export function formatCardDate(date: Date): string {
 }
 
 /**
- * Valida si un comentario es válido
+ * Formatea la fecha límite para mostrar en las tarjetas
  */
-export function isValidComment(comment: string): boolean {
-  return comment.trim().length > 0;
+export function formatCardDueDate(dueDate: string): string {
+  const date = new Date(dueDate);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+
+  const diffTime = targetDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Hoy";
+  if (diffDays === 1) return "Mañana";
+  if (diffDays === -1) return "Ayer";
+  if (diffDays > 0 && diffDays <= 7) return `En ${diffDays} días`;
+  if (diffDays < 0 && diffDays >= -7) return `Hace ${Math.abs(diffDays)} días`;
+
+  return date.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 /**
- * Valida los datos del formulario de tarjeta
+ * Verifica si una tarjeta está vencida
  */
-export function validateCardForm(title: string): { title?: string } {
-  const errors: { title?: string } = {};
+export function isCardOverdue(dueDate: string): boolean {
+  const date = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
 
-  if (!isValidCardTitle(title)) {
-    errors.title = "El título es requerido";
-  }
-
-  return errors;
-}
-
-/**
- * Prepara los datos de la tarjeta para envío
- */
-export function prepareCardDataForSubmission(
-  title: string,
-  description: string
-): { title: string; description?: string } {
-  const sanitized = sanitizeCardData(title, description);
-  return {
-    title: sanitized.title,
-    description: sanitized.description || undefined,
-  };
+  return date < today;
 }

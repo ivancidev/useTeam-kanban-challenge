@@ -5,6 +5,13 @@ import { CardDisplayProps } from "../types";
 import { actionIcons, uiIcons } from "@/shared/helpers/iconHelpers";
 import { buttonAnimations } from "@/shared/helpers/animationHelpers";
 import { getCardColor } from "@/shared/helpers/colorHelpers";
+import { useCardDisplayLogic } from "../hooks";
+import {
+  CardPriorityBadge,
+  CardTypeBadge,
+  CardDueDateDisplay,
+  CardTagsDisplay,
+} from "./ui";
 
 export function CardDisplay({
   card,
@@ -13,14 +20,15 @@ export function CardDisplay({
   onDelete,
 }: CardDisplayProps) {
   const cardColor = getCardColor(card.id);
+  const cardInfo = useCardDisplayLogic(card);
 
   const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent card click
+    e.stopPropagation();
     onEdit?.(card);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent card click
+    e.stopPropagation();
     onDelete?.(card.id);
   };
 
@@ -30,7 +38,6 @@ export function CardDisplay({
       relative group p-3 ${cardColor.background}
       rounded-xl border-2 border-gray-300 hover:border-gray-400 shadow-lg hover:shadow-xl ${cardColor.shadow}
       w-full max-w-none overflow-visible
-      h-[75px]
       box-border flex flex-col
       transition-all duration-200 ease-out
       hover:-translate-y-0.5
@@ -41,17 +48,9 @@ export function CardDisplay({
       outline-1 outline-gray-200/50
       ${className}
     `}
+      style={{ minHeight: `${cardInfo.estimatedHeight}px` }}
     >
-      {/* Badge de comentario - mejor posicionado para ser visible */}
-      {card.description && card.description.trim().length > 0 && (
-        <div className="absolute bottom-2 left-2 z-20">
-          <div className="bg-blue-500 text-white rounded-full p-1.5 shadow-lg border-2 border-gray-300 ring-1 ring-blue-400">
-            <uiIcons.comment className="h-3 w-3" />
-          </div>
-        </div>
-      )}
-
-      {/* Action buttons modernos - mejor posicionamiento sin chocar */}
+      {/* Action buttons */}
       {(onEdit || onDelete) && (
         <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           {onEdit && (
@@ -85,9 +84,46 @@ export function CardDisplay({
         </div>
       )}
 
-      <h4 className="font-semibold text-gray-900 text-sm leading-tight mb-2 truncate overflow-hidden whitespace-nowrap pr-4 pl-1 relative z-[1] drop-shadow-sm">
+      {/* Título */}
+      <h4 className="font-semibold text-gray-900 text-sm leading-tight mb-2 truncate pr-16">
         {card.title}
       </h4>
+
+      {/* Badges: Tipo y Prioridad */}
+      <div className="flex gap-1 mb-2">
+        {cardInfo.showType && <CardTypeBadge type={card.type} size="sm" />}
+        {cardInfo.showPriority && (
+          <CardPriorityBadge priority={card.priority} size="sm" />
+        )}
+      </div>
+
+      {/* Fecha límite */}
+      {cardInfo.hasDueDate && (
+        <div className="mb-2">
+          <CardDueDateDisplay dueDate={card.dueDate!} size="sm" />
+        </div>
+      )}
+
+      {/* Etiquetas */}
+      {cardInfo.hasTags && (
+        <div className="mb-2">
+          <CardTagsDisplay tags={card.tags} maxVisible={2} size="sm" />
+        </div>
+      )}
+
+      {/* Indicadores de contenido adicional */}
+      <div className="flex items-center gap-2 mt-auto">
+        {cardInfo.hasDescription && (
+          <div className="bg-blue-500 text-white rounded-full p-1 shadow-sm">
+            <uiIcons.comment className="h-3 w-3" />
+          </div>
+        )}
+        {cardInfo.hasComments && (
+          <div className="bg-purple-500 text-white rounded-full p-1 shadow-sm">
+            <uiIcons.message className="h-3 w-3" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
