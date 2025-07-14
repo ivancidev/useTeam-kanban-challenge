@@ -1,9 +1,11 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CardItemProps } from "../types";
 import { CardDisplay } from "./CardDisplay";
+import { cardAnimations } from "@/shared/helpers/animationHelpers";
 
 export function CardItem({
   card,
@@ -35,26 +37,31 @@ export function CardItem({
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
-      {...attributes}
       onClick={handleClick}
+      variants={cardAnimations}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      whileTap="tap"
+      layout
+      className="isolate"
     >
       <CardDisplay
         card={card}
         onEdit={onEdit}
         onDelete={onDelete}
-        showActions={!isDragging && (!!onEdit || !!onDelete)}
         className={`
-          hover:shadow-md transition-shadow 
+          transition-all duration-200
           ${onClick ? "cursor-pointer" : "cursor-default"}
           ${isLoading ? "opacity-50" : ""}
           ${isDragging ? "opacity-30 scale-95" : ""}
         `}
       />
-    </div>
+    </motion.div>
   );
 }

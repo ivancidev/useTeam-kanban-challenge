@@ -44,7 +44,6 @@ export interface CardItemProps {
   isLoading?: boolean;
 }
 
-
 export interface CardDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,7 +58,6 @@ export interface CardDisplayProps {
   className?: string;
   onEdit?: (card: Card) => void;
   onDelete?: (cardId: string) => void;
-  showActions?: boolean;
 }
 
 export interface UseCardFormDialogProps {
