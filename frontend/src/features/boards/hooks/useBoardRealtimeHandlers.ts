@@ -12,7 +12,20 @@ export const useBoardRealtimeHandlers = (
       setColumns((prev) => {
         // Evitar duplicados
         if (prev.find((col) => col.id === column.id)) return prev;
-        return [...prev, column];
+        const newColumns = [...prev, column].sort((a, b) => a.order - b.order);
+
+        // Forzar actualización del virtualizador después de agregar columna
+        setTimeout(() => {
+          const virtualizer = document.querySelector(
+            ".kanban-horizontal-scroll"
+          );
+          if (virtualizer) {
+            // Trigger re-measure en el virtualizador
+            virtualizer.dispatchEvent(new Event("scroll"));
+          }
+        }, 100);
+
+        return newColumns;
       });
     },
     [setColumns]

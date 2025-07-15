@@ -46,6 +46,19 @@ export function useKanbanBoardLogic() {
   const handleCreateColumn = async (data: CreateColumnDto) => {
     await createColumn(data);
     setShowCreateDialog(false);
+
+    // Hacer scroll al final para mostrar la nueva columna
+    setTimeout(() => {
+      const scrollElement = document.querySelector(
+        ".kanban-horizontal-scroll"
+      ) as HTMLElement;
+      if (scrollElement) {
+        scrollElement.scrollTo({
+          left: scrollElement.scrollWidth,
+          behavior: "smooth",
+        });
+      }
+    }, 300);
   };
 
   const handleEditColumn = async (data: UpdateColumnDto) => {
