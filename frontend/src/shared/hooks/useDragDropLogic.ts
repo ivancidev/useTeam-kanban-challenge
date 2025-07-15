@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core";
-import type { Card } from "../../features/cards/types";
-import type { Column } from "../../features/columns/types";
+
 import { useDragStore } from "../stores/dragStore";
 import { calculateDropPosition } from "../utils/dragCalculations";
+
+import type { Card } from "../../features/cards/types";
+import type { Column } from "../../features/columns/types";
 
 interface UseDragDropLogicProps {
   columns: Column[];

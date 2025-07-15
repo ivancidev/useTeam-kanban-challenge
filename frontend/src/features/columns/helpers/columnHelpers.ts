@@ -1,4 +1,5 @@
 import type { Card, CreateCardDto } from "../../cards/types";
+import { CardPriority, CardType } from "../../cards/types";
 import type { Column } from "../types";
 
 /**
@@ -57,6 +58,11 @@ export function createTempCard(
     id: `temp-${Date.now()}`,
     title: data.title,
     description: data.description || "",
+    comments: data.comments || "",
+    dueDate: data.dueDate || undefined,
+    priority: data.priority || CardPriority.MEDIUM,
+    type: data.type || CardType.TASK,
+    tags: data.tags || [],
     columnId: columnId,
     order: order,
     createdAt: new Date(),

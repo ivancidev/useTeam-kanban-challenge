@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CardItemProps } from "../types";
-import { CardDisplay } from "./CardDisplay";
 import { cardAnimations } from "@/shared/helpers/animationHelpers";
+import { CardDisplay } from "./CardDisplay";
+import { CardItemProps } from "../types";
 
 export function CardItem({
   card,

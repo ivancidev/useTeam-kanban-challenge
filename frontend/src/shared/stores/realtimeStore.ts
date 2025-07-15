@@ -218,7 +218,6 @@ export const useRealtimeStore = create<RealtimeStore>((set, get) => ({
     });
   },
 
-  // Remover todos los listeners
   removeEventListeners: () => {
     const { socket } = get();
 

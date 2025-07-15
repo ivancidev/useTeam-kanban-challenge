@@ -1,7 +1,7 @@
 "use client";
 
+import { CardDetailView } from "./CardDetailView";
 import { Card, UpdateCardDto } from "../types";
-import { CardDetailViewInline } from "./CardDetailViewInline";
 
 interface CardViewEditContainerProps {
   card: Card;
@@ -19,7 +19,7 @@ export function CardViewEditContainer({
   columnName,
 }: CardViewEditContainerProps) {
   return (
-    <CardDetailViewInline
+    <CardDetailView
       isOpen={isOpen}
       onClose={onClose}
       card={card}

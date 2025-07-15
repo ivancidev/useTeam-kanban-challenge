@@ -1,7 +1,9 @@
 import { useEffect, useCallback } from "react";
+
 import { useRealtimeStore } from "@/shared/stores/realtimeStore";
 import { useNotifications } from "@/shared/hooks/useNotifications";
 import { userActionTracker } from "@/shared/utils/userActionTracker";
+
 import type { Column } from "@/features/columns/types";
 import type { Card } from "@/features/cards/types";
 import { UseRealtimeSyncProps } from "../types";
@@ -153,7 +155,6 @@ export const useRealtimeSync = ({
     connectedUsers,
     lastUpdate,
     markUserAction,
-    // Funciones de control manual (opcional)
     manualConnect: connect,
     manualDisconnect: disconnect,
   };

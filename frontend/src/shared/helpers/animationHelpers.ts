@@ -1,6 +1,5 @@
 import { Variants } from "framer-motion";
 
-// Animaciones para las tarjetas
 export const cardAnimations: Variants = {
   hidden: {
     opacity: 0,
@@ -38,7 +37,6 @@ export const cardAnimations: Variants = {
   },
 };
 
-// Animaciones para las columnas
 export const columnAnimations: Variants = {
   hidden: {
     opacity: 0,
@@ -66,7 +64,6 @@ export const columnAnimations: Variants = {
   },
 };
 
-// Animaciones para botones
 export const buttonAnimations: Variants = {
   idle: {
     scale: 1,
@@ -86,7 +83,6 @@ export const buttonAnimations: Variants = {
   },
 };
 
-// Animaciones para contenedores
 export const containerAnimations: Variants = {
   hidden: {
     opacity: 0,

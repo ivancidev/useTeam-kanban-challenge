@@ -1,17 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { CardDisplayProps } from "../types";
-import { actionIcons, uiIcons } from "@/shared/helpers/iconHelpers";
-import { buttonAnimations } from "@/shared/helpers/animationHelpers";
 import { getCardColor } from "@/shared/helpers/colorHelpers";
 import { useCardDisplayLogic } from "../hooks";
+
 import {
-  CardPriorityBadge,
-  CardTypeBadge,
-  CardDueDateDisplay,
-  CardTagsDisplay,
-} from "./ui";
+  CardActionButtons,
+  CardTitle,
+  CardBadges,
+  CardDueDateSection,
+  CardTagsSection,
+  CardContentIndicators,
+} from "./card-display";
 
 export function CardDisplay({
   card,
@@ -21,16 +21,7 @@ export function CardDisplay({
 }: CardDisplayProps) {
   const cardColor = getCardColor(card.id);
   const cardInfo = useCardDisplayLogic(card);
-
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit?.(card);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete?.(card.id);
-  };
+  const hasActionButtons = !!(onEdit || onDelete);
 
   return (
     <div
@@ -49,96 +40,27 @@ export function CardDisplay({
       ${className}
     `}
     >
-      {/* Action buttons */}
-      {(onEdit || onDelete) && (
-        <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          {onEdit && (
-            <motion.button
-              onClick={handleEditClick}
-              className="h-6 w-6 p-1 bg-white/98 hover:bg-blue-50 hover:text-blue-600 
-                         rounded-md shadow-sm border border-gray-300 hover:border-blue-300 transition-all duration-200
-                         hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200"
-              title="Editar tarjeta"
-              variants={buttonAnimations}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <actionIcons.edit className="h-3 w-3" />
-            </motion.button>
-          )}
-          {onDelete && (
-            <motion.button
-              onClick={handleDeleteClick}
-              className="h-6 w-6 p-1 bg-white/98 hover:bg-red-50 hover:text-red-600 
-                         rounded-md shadow-sm border border-gray-300 hover:border-red-300 transition-all duration-200
-                         hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200"
-              title="Eliminar tarjeta"
-              variants={buttonAnimations}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <actionIcons.delete className="h-3 w-3" />
-            </motion.button>
-          )}
-        </div>
-      )}
+      <CardActionButtons card={card} onEdit={onEdit} onDelete={onDelete} />
 
-      {/* Título */}
-      <h4
-        className={`font-semibold text-gray-900 text-sm leading-tight mb-2 overflow-hidden break-words
-                      ${onEdit || onDelete ? "pr-20" : "pr-2"}`}
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: 1,
-          WebkitBoxOrient: "vertical",
-          lineHeight: "1.2",
-          maxHeight: "1.2em", // 1 línea × 1.2 line-height
-        }}
-      >
-        {card.title}
-      </h4>
+      <CardTitle title={card.title} hasActionButtons={hasActionButtons} />
 
-      {/* Badges: Tipo y Prioridad */}
-      <div className="flex gap-1 mb-2">
-        {cardInfo.showType && <CardTypeBadge type={card.type} size="sm" />}
-        {cardInfo.showPriority && (
-          <CardPriorityBadge priority={card.priority} size="sm" />
-        )}
-      </div>
+      <CardBadges
+        card={card}
+        showType={cardInfo.showType}
+        showPriority={cardInfo.showPriority}
+      />
 
-      {/* Fecha límite */}
-      {cardInfo.hasDueDate && (
-        <div className="mb-2">
-          <CardDueDateDisplay dueDate={card.dueDate!} size="sm" />
-        </div>
-      )}
+      <CardDueDateSection
+        dueDate={card.dueDate!}
+        hasDueDate={!!cardInfo.hasDueDate}
+      />
 
-      {/* Etiquetas */}
-      {cardInfo.hasTags && (
-        <div className="mb-2">
-          <CardTagsDisplay tags={card.tags} maxVisible={2} size="sm" />
-        </div>
-      )}
+      <CardTagsSection tags={card.tags} hasTags={!!cardInfo.hasTags} />
 
-      {/* Indicadores de contenido adicional */}
-      <div className="flex items-center gap-2 mt-auto">
-        {cardInfo.hasDescription && (
-          <div
-            className="bg-blue-500 text-white rounded-full p-1 shadow-sm"
-            title="Tiene descripción"
-          >
-            <uiIcons.description className="h-3 w-3" />
-          </div>
-        )}
-        {cardInfo.hasComments && (
-          <div
-            className="bg-purple-500 text-white rounded-full p-1 shadow-sm"
-            title="Tiene comentarios"
-          >
-            <uiIcons.comment className="h-3 w-3" />
-          </div>
-        )}
-      </div>
+      <CardContentIndicators
+        hasDescription={!!cardInfo.hasDescription}
+        hasComments={!!cardInfo.hasComments}
+      />
     </div>
   );
 }

@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
+import { useNotifications } from "@/shared/hooks/useNotifications";
+import { useRealtimeSync } from "@/shared/hooks/useRealtimeSync";
+import { userActionTracker } from "@/shared/utils/userActionTracker";
+
 import { boardsApi } from "../services/api";
-import { columnsApi } from "../../columns/services/api";
-import { cardsApi } from "../../cards/services/api";
-import { useNotifications } from "../../../shared/hooks/useNotifications";
-import { useRealtimeSync } from "../../../shared/hooks/useRealtimeSync";
-import { userActionTracker } from "../../../shared/utils/userActionTracker";
-import { useBoardRealtimeHandlers } from "./useBoardRealtimeHandlers";
 import {
   createAsyncHandler,
   createOptimisticHandler,
@@ -19,6 +18,10 @@ import {
   rollbackColumnOrder,
   isColumnMovementRequired,
 } from "../helpers";
+import { useBoardRealtimeHandlers } from "./useBoardRealtimeHandlers";
+import { columnsApi } from "../../columns/services/api";
+import { cardsApi } from "../../cards/services/api";
+
 import type { Board } from "../types";
 import type { MoveCardDto } from "../../cards/types";
 import type {

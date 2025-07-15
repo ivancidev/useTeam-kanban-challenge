@@ -57,8 +57,7 @@ export const uiIcons = {
   card: BsCardText,
   pin: BsPin,
   grid: FiGrid,
-  description: FiFileText, // Icono para descripción - documento/texto
-  comment: FiMessageCircle, // Icono para comentarios - burbuja de mensaje
-  // Mantener estos para compatibilidad si se usan en otros lugares
+  description: FiFileText, 
+  comment: FiMessageCircle,
   message: FiMessageSquare,
 } as const;
