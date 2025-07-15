@@ -1,11 +1,13 @@
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
-import { useRef, useMemo } from "react";
-import { Card } from "../types";
+import { useRef, useMemo, useEffect } from "react";
+
 import {
   VIRTUALIZATION_CONFIG,
   calculateCardHeight,
   calculateCardMargin,
 } from "../helpers/virtualizationHelpers";
+
+import { Card } from "../types";
 
 interface UseVirtualizedCardsConfig {
   cards: Card[];
@@ -36,6 +38,7 @@ export function useVirtualizedCards({
   );
 
   // Calcular alturas dinámicas para cada tarjeta
+  // Incluir cards como dependencia principal para recalcular cuando cambien
   const cardHeights = useMemo(() => {
     return cards.map(
       (card) => calculateCardHeight(card) + calculateCardMargin(card)
@@ -58,6 +61,14 @@ export function useVirtualizedCards({
 
   const virtualItems = shouldVirtualize ? virtualizer.getVirtualItems() : [];
   const totalSize = shouldVirtualize ? virtualizer.getTotalSize() : 0;
+
+  // Forzar re-medición cuando las alturas de las tarjetas cambien
+  useEffect(() => {
+    if (shouldVirtualize && virtualizer) {
+      // Invalidar todas las mediciones para forzar recálculo
+      virtualizer.measure();
+    }
+  }, [cardHeights, shouldVirtualize, virtualizer]);
 
   // Calcular tamaño promedio para compatibilidad
   const averageCardSize = useMemo(() => {

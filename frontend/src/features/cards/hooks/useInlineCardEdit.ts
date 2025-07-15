@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, UpdateCardDto, CardPriority, CardType } from "../types";
 import { useNotifications } from "../../../shared/hooks/useNotifications";
+
 import { isValidCardTitle, sanitizeCardData } from "../helpers";
+
+import { Card, UpdateCardDto, CardPriority, CardType } from "../types";
 
 interface UseInlineCardEditProps {
   card: Card;
