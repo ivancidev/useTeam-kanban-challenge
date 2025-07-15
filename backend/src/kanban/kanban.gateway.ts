@@ -1,9 +1,12 @@
 import {
+  SubscribeMessage,
   WebSocketGateway,
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
   WebSocketServer,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
@@ -20,15 +23,38 @@ export class KanbanGateway
   private logger: Logger = new Logger('KanbanGateway');
 
   afterInit(server: Server) {
-    this.logger.log('WebSocket Gateway initialized', server);
+    this.logger.log('WebSocket Gateway initialized');
   }
 
-  handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`, client.id);
+  handleConnection(client: Socket, ...args: any[]) {
+    this.logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`, client.id);
+    this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage('join-board')
+  handleJoinBoard(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() boardId: string,
+  ) {
+    client.join(`board-${boardId}`);
+    this.logger.log(`Client ${client.id} joined board ${boardId}`);
+  }
+
+  @SubscribeMessage('leave-board')
+  handleLeaveBoard(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() boardId: string,
+  ) {
+    client.leave(`board-${boardId}`);
+    this.logger.log(`Client ${client.id} left board ${boardId}`);
+  }
+
+  // Eventos para notificar cambios en tiempo real
+  broadcastBoardUpdate(boardId: string, data: any) {
+    this.server.to(`board-${boardId}`).emit('board-updated', data);
   }
 
   broadcastColumnCreated(boardId: string, column: any) {
