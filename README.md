@@ -1,90 +1,99 @@
-# Kanban Challenge - useTeam
+# 🧩 Kanban App 
 
-Un proyecto de gestión de tareas tipo Kanban desarrollado con NestJS (backend) y Next.js (frontend).
-
-## 🚀 Estructura del Proyecto
-
-```
-├── backend/          # API REST con NestJS
-│   ├── src/
-│   ├── package.json
-│   └── ...
-├── frontend/         # Aplicación web con Next.js
-│   ├── src/
-│   ├── package.json
-│   └── ...
-└── README.md
-```
-
-## 🛠️ Tecnologías
-
-### Backend
-
-- **NestJS** - Framework de Node.js
-- **TypeScript** - Lenguaje de programación
-- **ESLint & Prettier** - Linting y formateo de código
-
-### Frontend
-
-- **Next.js** - Framework de React
-- **TypeScript** - Lenguaje de programación
-- **Tailwind CSS** - Framework CSS (por confirmar)
-
-## 📋 Instalación
-
-### Requisitos previos
-
-- Node.js (versión 18 o superior)
-- npm o yarn
-
-### Backend
-
-```bash
-cd backend
-npm install
-npm run start:dev
-```
-
-El servidor estará disponible en `http://localhost:4000`
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-La aplicación estará disponible en `http://localhost:3000`
-
-## 🔧 Scripts Disponibles
-
-### Backend
-
-- `npm run start:dev` - Ejecuta el servidor en modo desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm run lint` - Ejecuta ESLint
-- `npm run format` - Formatea el código con Prettier
-- `npm run test` - Ejecuta los tests
-
-### Frontend
-
-- `npm run dev` - Ejecuta la aplicación en modo desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm run start` - Ejecuta la aplicación en modo producción
-
-## 🏗️ Estado del Proyecto
-
-🚧 **En desarrollo** - Proyecto inicial configurado
-
-## 📝 Próximos Pasos
-
-- [ ] Configurar base de datos
-- [ ] Implementar autenticación
-- [ ] Desarrollar APIs del backend
-- [ ] Crear componentes del frontend
-- [ ] Implementar funcionalidades Kanban
+Este proyecto es una aplicación Kanban con **Frontend en Next.js** y **Backend en NestJS**, conectados a una base de datos **MongoDB Atlas** en la nube. La comunicación entre frontend y backend es vía HTTP/WebSocket. Todo se ejecuta fácilmente con **Docker Compose**.
 
 ---
 
-_README temporal - Se actualizará conforme avance el desarrollo_
+## 📁 Estructura del proyecto
+
+```
+/
+├── frontend/
+│   ├── Dockerfile
+│   ├── .env.local      # Usado por Docker
+│   ├── .env            # Usado para puerto local
+│   └── .env.example
+├── backend/
+│   ├── Dockerfile
+│   ├── .env.local      # Usado por Docker
+│   ├── .env            # Usado para conexión API y socket
+│   └── .env.example
+├── docker-compose.yml
+```
+
+> **Nota:**  
+> Los archivos `.env` y `.env.local` deben existir en ambos frontend y backend.  
+> Docker usa `.env.local`, pero `.env` es útil para desarrollo local.
+
+---
+
+## 🚀 Instalación rápida
+
+### 1. Clona el repositorio
+
+```bash
+git clone https://github.com/ivancidev/useTeam-kanban-challenge.git
+cd useTeam-kanban-challenge
+```
+
+### 2. Configura las variables de entorno
+
+#### 🛠️ Backend
+
+Copia los archivos de ejemplo y edítalos:
+
+```bash
+cp backend/.env.example backend/.env
+cp backend/.env backend/.env.local
+```
+
+Edita `backend/.env.local` y reemplaza `DATABASE_URL` con tu cadena de conexión de MongoDB Atlas:
+
+```
+DATABASE_URL="mongodb+srv://<usuario>:<contraseña>@cluster0.mongodb.net/kanban-board?retryWrites=true&w=majority"
+CLIENT_ORIGIN=http://localhost:3000
+PORT=3001
+```
+
+#### 🛠️ Frontend
+
+Puedes dejar los valores por defecto si el backend corre en `localhost:3001`:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+```
+
+### 3. Ejecuta con Docker Compose
+
+Desde la raíz del proyecto, ejecuta:
+
+```bash
+docker-compose up --build
+```
+
+Esto levantará:
+
+- 🟦 **Frontend:** http://localhost:3000
+- 🟥 **Backend:** http://localhost:3001
+
+---
+
+## 📦 Requisitos previos
+
+- Tener **Docker** y **Docker Compose** instalados.
+- Tener una cuenta en **MongoDB Atlas** y la cadena de conexión (`DATABASE_URL`).
+
+---
+
+## ✅ Comprobación
+
+Una vez iniciado, abre en tu navegador:
+
+- 🌐 Frontend: [http://localhost:3000](http://localhost:3000)
+- ⚙️ Backend: [http://localhost:3001](http://localhost:3001)
+
+---
+
+
+¡Listo! Ahora puedes probar y evaluar la aplicación
