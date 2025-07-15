@@ -31,6 +31,7 @@ export class Card {
   createdAt: Date;
   updatedAt: Date;
 
+
   // Método estático para transformar datos de Prisma a una instancia de Card
   static fromPrisma(data: any): Card {
     const card = new Card();
