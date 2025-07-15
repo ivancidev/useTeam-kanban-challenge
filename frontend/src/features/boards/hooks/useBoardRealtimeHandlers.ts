@@ -124,11 +124,9 @@ export const useBoardRealtimeHandlers = (
   );
 
   return {
-    // Handlers de columnas
     handleRealtimeColumnCreated,
     handleRealtimeColumnUpdated,
     handleRealtimeColumnDeleted,
-    // Handlers de tarjetas
     handleRealtimeCardCreated,
     handleRealtimeCardUpdated,
     handleRealtimeCardMoved,

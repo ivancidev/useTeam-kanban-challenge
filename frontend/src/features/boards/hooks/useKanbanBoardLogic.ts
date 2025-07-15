@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useBoard } from "./useBoard";
 import { useDragStore } from "@/shared/stores/dragStore";
+import { useBoard } from "./useBoard";
 import type {
   Column,
   CreateColumnDto,
