@@ -8,6 +8,8 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ColumnsService {
+  private readonly orderByAsc = 'asc' as const;
+
   constructor(
     private prisma: PrismaService,
     private kanbanGateway: KanbanGateway,
@@ -15,12 +17,12 @@ export class ColumnsService {
 
   private readonly cardsInclude: Prisma.ColumnInclude = {
     cards: {
-      orderBy: { order: 'asc' },
+      orderBy: { order: this.orderByAsc },
     },
   };
 
   private readonly columnOrderAsc: Prisma.ColumnOrderByWithRelationInput = {
-    order: 'asc',
+    order: this.orderByAsc,
   };
 
   async create(createColumnDto: CreateColumnDto): Promise<Column> {

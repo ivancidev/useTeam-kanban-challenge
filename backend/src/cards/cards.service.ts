@@ -1,40 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { KanbanGateway } from '../kanban/kanban.gateway';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
-import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { KanbanGateway } from '../kanban/kanban.gateway';
+import { CardPriority, CardType } from './entities/card.entity';
 
 @Injectable()
 export class CardsService {
-  private readonly orderByAsc = { order: Prisma.SortOrder.asc };
-
   constructor(
     private prisma: PrismaService,
     private kanbanGateway: KanbanGateway,
   ) {}
 
-  private async getBoardIdByColumn(columnId: string): Promise<string | null> {
-    const column = await this.prisma.column.findUnique({
-      where: { id: columnId },
-      select: { boardId: true },
-    });
-    return column?.boardId ?? null;
-  }
-
-  private async getBoardIdByCard(cardId: string): Promise<string | null> {
-    const card = await this.prisma.card.findUnique({
-      where: { id: cardId },
-      include: {
-        column: {
-          select: { boardId: true },
-        },
-      },
-    });
-    return card?.column?.boardId ?? null;
-  }
-
   async create(createCardDto: CreateCardDto) {
+    // Si no se especifica un orden se obtiene el siguiente número disponible
     const nextOrder =
       createCardDto.order ??
       (await this.prisma.card.count({
@@ -42,76 +21,124 @@ export class CardsService {
       }));
 
     const card = await this.prisma.card.create({
-      data: {
-        ...createCardDto,
-        dueDate: createCardDto.dueDate ? new Date(createCardDto.dueDate) : null,
-        priority: createCardDto.priority || 'MEDIUM',
-        type: createCardDto.type || 'TASK',
-        order: nextOrder,
-      },
+  data: {
+    title: createCardDto.title,
+    description: createCardDto.description,
+    comments: createCardDto.comments,
+    dueDate: createCardDto.dueDate ? new Date(createCardDto.dueDate) : null,
+    priority: createCardDto.priority || 'MEDIUM',
+    type: createCardDto.type || 'TASK', 
+    tags: createCardDto.tags || [],
+    order: nextOrder,
+    columnId: createCardDto.columnId,
+  },
+});
+
+    // Obtener el boardId de la columna para emitir el evento
+    const column = await this.prisma.column.findUnique({
+      where: { id: createCardDto.columnId },
+      select: { boardId: true },
     });
 
-    const boardId = await this.getBoardIdByColumn(createCardDto.columnId);
-    if (boardId) {
-      this.kanbanGateway.broadcastCardCreated(boardId, card);
+    // Emitir evento WebSocket
+    if (column) {
+      this.kanbanGateway.broadcastCardCreated(column.boardId, card);
     }
 
     return card;
   }
 
   async findAll() {
-    return this.prisma.card.findMany({
-      orderBy: this.orderByAsc,
+    return await this.prisma.card.findMany({
+      orderBy: {
+        order: 'asc',
+      },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.card.findUnique({ where: { id } });
+    return await this.prisma.card.findUnique({
+      where: { id },
+    });
   }
 
   async update(id: string, updateCardDto: UpdateCardDto) {
-    const boardId = await this.getBoardIdByCard(id);
+    // Obtener información de la tarjeta antes de actualizarla
+    const existingCard = await this.prisma.card.findUnique({
+      where: { id },
+      include: {
+        column: {
+          select: { boardId: true },
+        },
+      },
+    });
 
-    const updateData: any = {
-      ...updateCardDto,
-      dueDate: updateCardDto.dueDate
-        ? new Date(updateCardDto.dueDate)
-        : undefined,
-    };
+    // Preparar datos de actualización
+    const updateData: any = { ...updateCardDto };
+
+    // Convertir dueDate si existe
+    if (updateCardDto.dueDate) {
+      updateData.dueDate = new Date(updateCardDto.dueDate);
+    }
 
     const updatedCard = await this.prisma.card.update({
       where: { id },
       data: updateData,
     });
 
-    if (boardId) {
-      this.kanbanGateway.broadcastCardUpdated(boardId, updatedCard);
+    // Emitir evento WebSocket
+    if (existingCard?.column) {
+      this.kanbanGateway.broadcastCardUpdated(
+        existingCard.column.boardId,
+        updatedCard,
+      );
     }
 
     return updatedCard;
   }
 
   async remove(id: string) {
-    const boardId = await this.getBoardIdByCard(id);
+    // Obtener información de la tarjeta antes de eliminarla
+    const existingCard = await this.prisma.card.findUnique({
+      where: { id },
+      include: {
+        column: {
+          select: { boardId: true },
+        },
+      },
+    });
 
-    const deletedCard = await this.prisma.card.delete({ where: { id } });
+    const deletedCard = await this.prisma.card.delete({
+      where: { id },
+    });
 
-    if (boardId) {
-      this.kanbanGateway.broadcastCardDeleted(boardId, id);
+    // Emitir evento WebSocket
+    if (existingCard?.column) {
+      this.kanbanGateway.broadcastCardDeleted(existingCard.column.boardId, id);
     }
 
     return deletedCard;
   }
 
   async findByColumn(columnId: string) {
-    return this.prisma.card.findMany({
+    return await this.prisma.card.findMany({
       where: { columnId },
-      orderBy: this.orderByAsc,
+      orderBy: {
+        order: 'asc',
+      },
     });
   }
 
   async moveCard(cardId: string, newColumnId: string, newOrder: number) {
-    const boardId = await this.getBoardIdByCard(cardId);
+    // Obtener información de la tarjeta y columnas antes de moverla
+    const existingCard = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      include: {
+        column: {
+          select: { boardId: true },
+        },
+      },
+    });
 
     const updatedCard = await this.prisma.card.update({
       where: { id: cardId },
@@ -121,8 +148,9 @@ export class CardsService {
       },
     });
 
-    if (boardId) {
-      this.kanbanGateway.broadcastCardMoved(boardId, {
+    // Emitir evento WebSocket
+    if (existingCard?.column) {
+      this.kanbanGateway.broadcastCardMoved(existingCard.column.boardId, {
         cardId,
         targetColumnId: newColumnId,
         newOrder,
