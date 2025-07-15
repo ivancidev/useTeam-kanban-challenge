@@ -14,9 +14,11 @@ import {
   SortableContext,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { Column } from "../../features/columns/types";
+
 import { CardDisplay } from "../../features/cards/components/CardDisplay";
 import { useDragDropLogic } from "../hooks/useDragDropLogic";
+
+import type { Column } from "../../features/columns/types";
 
 interface DragDropProviderProps {
   children: React.ReactNode;
