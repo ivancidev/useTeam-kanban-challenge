@@ -1,7 +1,7 @@
 export { CardItem } from "./CardItem";
 export { CardDisplay } from "./CardDisplay";
-export { DropIndicator } from "./ui/DropIndicator";
+export { DropIndicator } from "./DropIndicator";
 export { CardFormDialog } from "./CardFormDialog";
-export { CardDetailView } from "./views/CardDetailView";
-export { CardViewEditContainer } from "./views/CardViewEditContainer";
+export { CardDetailView } from "./CardDetailView";
+export { CardViewEditContainer } from "./CardViewEditContainer";
 export * from "./ui";

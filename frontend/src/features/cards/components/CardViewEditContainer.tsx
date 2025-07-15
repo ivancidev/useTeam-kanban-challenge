@@ -1,7 +1,7 @@
 "use client";
 
 import { CardDetailView } from "./CardDetailView";
-import { Card, UpdateCardDto } from "../../types";
+import { Card, UpdateCardDto } from "../types";
 
 interface CardViewEditContainerProps {
   card: Card;
