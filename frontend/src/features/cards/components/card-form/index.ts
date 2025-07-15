@@ -1,4 +1,3 @@
-// Exports de componentes del formulario de tarjeta
 export { CardFormHeader } from "./CardFormHeader";
 export { CardFormTitle } from "./CardFormTitle";
 export { CardFormTypePriority } from "./CardFormTypePriority";
