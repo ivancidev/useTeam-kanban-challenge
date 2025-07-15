@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { VirtualizedCardsList } from "../../../cards/components/VirtualizedCardsList";
-import { DropIndicator } from "../../../cards/components/DropIndicator";
+import { DropIndicator } from "../../../cards/components/ui/DropIndicator";
 
 import { actionIcons } from "@/shared/helpers/iconHelpers";
 import { buttonAnimations } from "@/shared/helpers/animationHelpers";
