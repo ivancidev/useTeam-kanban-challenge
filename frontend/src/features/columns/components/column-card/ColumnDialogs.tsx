@@ -1,5 +1,5 @@
 import { CardFormDialog } from "../../../cards/components/CardFormDialog";
-import { CardViewEditContainer } from "../../../cards/components/views/CardViewEditContainer";
+import { CardViewEditContainer } from "../../../cards/components/CardViewEditContainer";
 import { Card, CreateCardDto, UpdateCardDto } from "../../../cards/types";
 
 interface ColumnDialogsProps {
