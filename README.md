@@ -54,7 +54,16 @@ cp backend/.env backend/.env.local
 3. Espera a que el cluster termine de crearse.
 4. Haz clic en "Connect" > "Connect your application".
 5. Copia la cadena de conexión que te genera Atlas.  
-   **Importante:** No la pegues directamente. Debes cambiar el nombre de usuario y la contraseña por los que creaste en Atlas, y asegurarte que el nombre de la base de datos sea `kanban-board`.
+   **Importante:** Debes copiar la cadena tal como te la da Atlas, pero asegúrate de cambiar el nombre de usuario y la contraseña por los que creaste en Atlas, y agregar o modificar el nombre de la base de datos al final para que sea `kanban-board`.  
+   Por ejemplo, tu cadena debe verse así (solo cambia `<TU_USUARIO>`, `<TU_CONTRASEÑA>` y el código del cluster según tu proyecto):
+
+```
+DATABASE_URL="mongodb+srv://<TU_USUARIO>:<TU_CONTRASEÑA>@cluster0.xxxxx.mongodb.net/kanban-board?retryWrites=true&w=majority&appName=Cluster0"
+CLIENT_ORIGIN=http://localhost:3000
+PORT=3001
+```
+
+> **Nota:** El código del cluster (`cluster0.xxxxx.mongodb.net`) es único para cada proyecto, así que debes copiarlo tal cual aparece en Atlas y solo modificar el usuario,
 6. Ejemplo de cómo debe quedar la cadena en tus archivos `backend/.env` y `backend/.env.local` (solo cambia el usuario y la contraseña):
 
 ```
@@ -69,11 +78,18 @@ PORT=3001
 > **Tip:** Si tu usuario o contraseña tienen caracteres especiales, usa [URL Encode](https://www.urlencoder.io/)
 
 **Resumen:**  
-No pegues la cadena tal cual te la da Atlas. Debes cambiar el usuario y la contraseña, y asegurarte que la base de datos sea `kanban-board`.  
+Debes cambiar el usuario y la contraseña, y asegurarte que la base de datos sea `kanban-board`.  
 **Recuerda:** La configuración debe ser igual en ambos archivos: `backend/.env` y `backend/.env.local
 
 
 #### 🛠️ Frontend
+
+Copia los archivos de ejemplo y edítalos:
+
+```bash
+cp frontend/.env.example frontend/.env
+cp frontend/.env frontend/.env.local
+```
 
 No cambies el puerto, ya está configurado por defecto para conectarse al backend en `localhost:3001`:
 
