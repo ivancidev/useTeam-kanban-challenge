@@ -94,24 +94,6 @@ export function useVirtualizedColumns({
       // Pequeño delay para permitir que el DOM se actualice
       const timer = setTimeout(() => {
         virtualizer.measure();
-
-        // Auto-scroll al final cuando se agrega una nueva columna
-        const scrollElement = document.querySelector(
-          ".kanban-horizontal-scroll"
-        ) as HTMLElement;
-        if (scrollElement) {
-          const isAtEnd =
-            scrollElement.scrollLeft >=
-            scrollElement.scrollWidth - scrollElement.clientWidth - 100;
-
-          // Si el usuario está cerca del final o es la primera columna, hacer scroll al final
-          if (isAtEnd || columns.length === 1) {
-            scrollElement.scrollTo({
-              left: scrollElement.scrollWidth,
-              behavior: "smooth",
-            });
-          }
-        }
       }, 200);
 
       return () => clearTimeout(timer);

@@ -71,28 +71,19 @@ export function useBoard() {
       if (!currentBoard) return;
 
       const columnData = { ...data, boardId: currentBoard.id };
-
+      
       try {
         const result = await asyncHandler(
           () => columnsApi.createColumn(columnData),
           "Columna creada exitosamente",
           "Error al crear la columna"
         );
-
+        
         // Marcar la acción del usuario con el ID real de la columna creada
         if (result) {
-          userActionTracker.markAction("column-created", result.id);
-
-          // Actualizar el estado local inmediatamente para reflejar la nueva columna
-          setColumns((prev) => {
-            // Verificar si la columna ya existe para evitar duplicados
-            const exists = prev.find((col) => col.id === result.id);
-            if (exists) return prev;
-
-            return [...prev, result].sort((a, b) => a.order - b.order);
-          });
+          userActionTracker.markAction('column-created', result.id);
         }
-
+        
         return result;
       } catch (error) {
         throw error;
@@ -104,8 +95,8 @@ export function useBoard() {
   const editColumn = useCallback(
     async (id: string, data: UpdateColumnDto) => {
       // Marcar la acción del usuario antes de realizar la actualización
-      userActionTracker.markAction("column-updated", id);
-
+      userActionTracker.markAction('column-updated', id);
+      
       await asyncHandler(
         () => columnsApi.updateColumn(id, data),
         "Columna actualizada exitosamente",
@@ -118,8 +109,8 @@ export function useBoard() {
   const deleteColumn = useCallback(
     async (id: string) => {
       // Marcar la acción del usuario antes de realizar la eliminación
-      userActionTracker.markAction("column-deleted", id);
-
+      userActionTracker.markAction('column-deleted', id);
+      
       await asyncHandler(
         () => columnsApi.deleteColumn(id),
         "Columna eliminada exitosamente",
