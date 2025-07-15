@@ -63,7 +63,7 @@ export function CardDetailView({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className="!max-w-none h-[85vh] overflow-hidden p-0 border-2 border-gray-300 shadow-xl"
-        style={{ width: "min(1200px, 90vw)", maxWidth: "none" }}
+        style={{ width: "min(1200px, 95vw)", maxWidth: "none" }}
         onKeyDown={handleKeyDown}
       >
         <div className="flex flex-col h-full">
@@ -78,12 +78,12 @@ export function CardDetailView({
           />
 
           <div
-            className="flex-1 overflow-y-auto px-6 py-4"
+            className="flex-1 overflow-y-auto px-2 py-2 sm:px-4 sm:py-4 md:px-6 md:py-4"
             style={{ maxHeight: "calc(85vh - 140px)" }}
           >
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 xl:gap-8">
               {/* Columna izquierda */}
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <CardTypePriority
                   card={card}
                   isEditing={isEditing}
@@ -116,7 +116,7 @@ export function CardDetailView({
               </div>
 
               {/* Columna derecha */}
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <CardDescription
                   isEditing={isEditing}
                   isSaving={isSaving}
