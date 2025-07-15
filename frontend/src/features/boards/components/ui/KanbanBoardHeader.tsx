@@ -44,7 +44,7 @@ export function KanbanBoardHeader({
         disabled={isLoading}
         className={`${getButtonClasses(
           "primary"
-        )} flex items-center gap-2 shadow-md px-4 py-2 text-sm sm:text-base font-semibold rounded-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 w-full sm:w-auto justify-center`}
+        )} flex items-center gap-2 shadow-md px-4 py-2 text-sm sm:text-base font-semibold rounded-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform transition-all duration-200 w-full sm:w-auto justify-center cursor-pointer`}
         variants={buttonAnimations}
         whileHover="hover"
         whileTap="tap"

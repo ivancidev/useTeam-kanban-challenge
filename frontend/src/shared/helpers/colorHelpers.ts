@@ -57,7 +57,7 @@ export const buttonColors = {
     disabled: "disabled:from-gray-300 disabled:to-gray-400",
   },
   secondary: {
-    base: "bg-gray-100 text-gray-700 border border-gray-300",
+    base: "bg-gray-100 text-gray-700",
     hover: "hover:bg-gray-200 hover:border-gray-400",
     active: "active:bg-gray-300",
   },
@@ -111,7 +111,7 @@ export const getButtonClasses = (
   };
 
   const baseClasses =
-    "font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+    "font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer";
   const widthClass = fullWidth ? "w-full" : "";
 
   const colorClasses = buttonColors[variant];
