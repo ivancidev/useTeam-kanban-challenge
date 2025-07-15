@@ -1,59 +1,44 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
-import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BoardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
+
+  private readonly cardInclude = {
+    cards: {
+      orderBy: { order: 'asc' as const },
+    },
+  };
+
+  private readonly fullBoardInclude = {
+    columns: {
+      include: this.cardInclude,
+      orderBy: { order: 'asc' as const },
+    },
+  };
 
   async create(createBoardDto: CreateBoardDto) {
     return await this.prisma.board.create({
       data: {
         name: createBoardDto.name,
       },
-      include: {
-        columns: {
-          include: {
-            cards: true,
-          },
-        },
-      },
+      include: this.fullBoardInclude,
     });
   }
 
   async findAll() {
     return await this.prisma.board.findMany({
-      include: {
-        columns: {
-          include: {
-            cards: true,
-          },
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
+      include: this.fullBoardInclude,
     });
   }
 
   async findOne(id: string) {
     return await this.prisma.board.findUnique({
       where: { id },
-      include: {
-        columns: {
-          include: {
-            cards: {
-              orderBy: {
-                order: 'asc',
-              },
-            },
-          },
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
+      include: this.fullBoardInclude,
     });
   }
 
@@ -61,13 +46,7 @@ export class BoardsService {
     return await this.prisma.board.update({
       where: { id },
       data: updateBoardDto,
-      include: {
-        columns: {
-          include: {
-            cards: true,
-          },
-        },
-      },
+      include: this.fullBoardInclude,
     });
   }
 
@@ -78,25 +57,10 @@ export class BoardsService {
   }
 
   async getOrCreateDefaultBoard() {
-    // Intentar encontrar un board existente
     let board = await this.prisma.board.findFirst({
-      include: {
-        columns: {
-          include: {
-            cards: {
-              orderBy: {
-                order: 'asc',
-              },
-            },
-          },
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
+      include: this.fullBoardInclude,
     });
 
-    // Si no existe, crear uno nuevo con columnas por defecto
     if (!board) {
       board = await this.prisma.board.create({
         data: {
@@ -109,20 +73,7 @@ export class BoardsService {
             ],
           },
         },
-        include: {
-          columns: {
-            include: {
-              cards: {
-                orderBy: {
-                  order: 'asc',
-                },
-              },
-            },
-            orderBy: {
-              order: 'asc',
-            },
-          },
-        },
+        include: this.fullBoardInclude,
       });
     }
 

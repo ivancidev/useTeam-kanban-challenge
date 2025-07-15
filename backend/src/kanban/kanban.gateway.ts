@@ -33,30 +33,7 @@ export class KanbanGateway
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
-
-  @SubscribeMessage('join-board')
-  handleJoinBoard(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() boardId: string,
-  ) {
-    client.join(`board-${boardId}`);
-    this.logger.log(`Client ${client.id} joined board ${boardId}`);
-  }
-
-  @SubscribeMessage('leave-board')
-  handleLeaveBoard(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() boardId: string,
-  ) {
-    client.leave(`board-${boardId}`);
-    this.logger.log(`Client ${client.id} left board ${boardId}`);
-  }
-
-  // Eventos para notificar cambios en tiempo real
-  broadcastBoardUpdate(boardId: string, data: any) {
-    this.server.to(`board-${boardId}`).emit('board-updated', data);
-  }
-
+  
   broadcastColumnCreated(boardId: string, column: any) {
     this.server.to(`board-${boardId}`).emit('column-created', column);
   }
