@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useEffect, useRef } from "react";
+
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Column } from "../types";
+
 import { COLUMN_VIRTUALIZATION_CONFIG } from "../helpers/columnVirtualizationHelpers";
+import { Column } from "../types";
 
 interface UseVirtualizedColumnsProps {
   columns: Column[];
