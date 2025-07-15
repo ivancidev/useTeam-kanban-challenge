@@ -11,10 +11,6 @@ export class Column {
   createdAt: Date;
   updatedAt: Date;
 
-  get totalCards(): number {
-    return this.cards?.length || 0;
-  }
-
   static fromPrisma(data: any): Column {
     const column = new Column();
     Object.assign(column, data);
