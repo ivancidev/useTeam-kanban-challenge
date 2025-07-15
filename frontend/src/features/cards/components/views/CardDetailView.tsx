@@ -2,8 +2,8 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-import { Card, UpdateCardDto } from "../types";
-import { useCardDetailDialog } from "../hooks/useCardDetailDialog";
+import { Card, UpdateCardDto } from "../../types";
+import { useCardDetailDialog } from "../../hooks/useCardDetailDialog";
 
 import {
   CardDetailHeader,
@@ -14,7 +14,7 @@ import {
   CardComments,
   CardDateInfo,
   CardDetailFooter,
-} from "./card-detail";
+} from "../card-detail";
 
 interface CardDetailViewInlineProps {
   isOpen: boolean;
