@@ -80,7 +80,9 @@ export function KanbanBoard() {
           onScroll={updateScrollButtons}
         >
           {isLoading && columns.length === 0 ? (
-            <KanbanBoardLoadingSkeleton />
+            <div className="flex justify-center items-center h-full w-full">
+              <KanbanBoardLoadingSkeleton />
+            </div>
           ) : columns.length > 0 ? (
             <VirtualizedColumnsList
               columns={columns}
