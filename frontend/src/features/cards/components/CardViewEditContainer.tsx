@@ -19,12 +19,14 @@ export function CardViewEditContainer({
   columnName,
 }: CardViewEditContainerProps) {
   return (
-    <CardDetailView
-      isOpen={isOpen}
-      onClose={onClose}
-      card={card}
-      onUpdate={onUpdate}
-      columnName={columnName}
-    />
+    <div className="w-full max-w-[98vw] mx-auto">
+      <CardDetailView
+        isOpen={isOpen}
+        onClose={onClose}
+        card={card}
+        onUpdate={onUpdate}
+        columnName={columnName}
+      />
+    </div>
   );
 }

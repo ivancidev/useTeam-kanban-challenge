@@ -33,7 +33,7 @@ export function CardActionButtons({
           onClick={handleEditClick}
           className="h-6 w-6 p-1 bg-white/98 hover:bg-blue-50 hover:text-blue-600 
                      rounded-md shadow-sm border border-gray-300 hover:border-blue-300 transition-all duration-200
-                     hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200"
+                     hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200 cursor-pointer"
           title="Editar tarjeta"
           variants={buttonAnimations}
           whileHover="hover"
@@ -47,7 +47,7 @@ export function CardActionButtons({
           onClick={handleDeleteClick}
           className="h-6 w-6 p-1 bg-white/98 hover:bg-red-50 hover:text-red-600 
                      rounded-md shadow-sm border border-gray-300 hover:border-red-300 transition-all duration-200
-                     hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200"
+                     hover:shadow-md backdrop-blur-sm ring-1 ring-gray-200 cursor-pointer"
           title="Eliminar tarjeta"
           variants={buttonAnimations}
           whileHover="hover"

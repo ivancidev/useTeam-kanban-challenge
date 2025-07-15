@@ -58,7 +58,7 @@ export function ColumnHeader({
           <motion.button
             onClick={onEditColumn}
             disabled={isLoading}
-            className="h-8 w-8 p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors disabled:opacity-50"
+            className="h-8 w-8 p-1 rounded-md hover:bg-white/20 text-white/80 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
             title="Editar columna"
             variants={buttonAnimations}
             whileHover="hover"
@@ -70,7 +70,7 @@ export function ColumnHeader({
           <motion.button
             onClick={onDeleteColumn}
             disabled={isLoading}
-            className="h-8 w-8 p-1 rounded-md hover:bg-red-500/20 text-white/80 hover:text-red-200 transition-colors disabled:opacity-50"
+            className="h-8 w-8 p-1 rounded-md hover:bg-red-500/20 text-white/80 hover:text-red-200 transition-colors disabled:opacity-50 cursor-pointer"
             title="Eliminar columna"
             variants={buttonAnimations}
             whileHover="hover"

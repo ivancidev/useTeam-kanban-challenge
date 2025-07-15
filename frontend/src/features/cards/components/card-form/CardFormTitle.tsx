@@ -15,8 +15,8 @@ export function CardFormTitle({
   isLoading,
 }: CardFormTitleProps) {
   return (
-    <div className="grid gap-2">
-      <Label htmlFor="title">
+    <div className="grid gap-2 w-full">
+      <Label htmlFor="title" className="text-base sm:text-lg">
         Título <span className="text-red-500">*</span>
       </Label>
       <Textarea
@@ -24,7 +24,7 @@ export function CardFormTitle({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Ingresa el título de la tarjeta"
-        className={`resize-none min-h-[2.5rem] max-h-[8rem] leading-tight w-full ${
+        className={`resize-none min-h-[2.5rem] max-h-[8rem] leading-tight w-full text-base sm:text-lg ${
           error ? "border-red-500" : ""
         }`}
         style={{
@@ -51,7 +51,11 @@ export function CardFormTitle({
           }
         }}
       />
-      {error && <span className="text-sm text-red-500">{error}</span>}
+      {error && (
+        <span className="text-sm sm:text-base text-red-500 break-words">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

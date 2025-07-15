@@ -45,7 +45,7 @@ export function CardTags({
                 <Badge
                   key={index}
                   variant="secondary"
-                  className="flex items-center gap-2 px-3 py-2 max-w-[250px] h-8"
+                  className="flex items-center gap-2 px-3 py-2 max-w-full sm:max-w-[250px] h-8"
                 >
                   <span className="truncate">{tag}</span>
                   <Button
@@ -64,7 +64,7 @@ export function CardTags({
           )}
 
           {/* Agregar nueva etiqueta */}
-          <div className="flex gap-3">
+          <div className="flex flex-col xs:flex-row gap-2">
             <Input
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
@@ -79,7 +79,7 @@ export function CardTags({
               size="sm"
               onClick={handleAddTag}
               disabled={!newTag.trim() || isSaving}
-              className="h-11 px-4 border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+              className="h-11 px-4 border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 w-full xs:w-auto"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -108,7 +108,7 @@ export function CardTags({
         <CardTagsDisplay tags={tags} maxVisible={10} size="md" />
       ) : (
         <span
-          className="text-gray-500 text-sm cursor-pointer hover:text-gray-700"
+          className="text-gray-500 text-sm cursor-pointer hover:text-gray-700 block"
           onClick={startEditing}
         >
           Hacer clic para agregar etiquetas

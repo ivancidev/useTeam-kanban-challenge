@@ -76,11 +76,11 @@ export function CardFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <form onSubmit={handleSubmit}>
           <CardFormHeader isEditing={isEditing} />
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-3 sm:gap-4 py-2 sm:py-4">
             <CardFormTitle
               title={title}
               setTitle={setTitle}
