@@ -1,4 +1,3 @@
-// Exports de componentes del detalle de tarjeta
 export { CardDetailHeader } from "./CardDetailHeader";
 export { CardTypePriority } from "./CardTypePriority";
 export { CardDueDate } from "./CardDueDate";
